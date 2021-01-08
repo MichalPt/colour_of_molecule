@@ -36,6 +36,7 @@ def Gauss_log_to_abslines(log_file, title={},show_abs_lines_data=False,show_par=
             ki = 1
         if reg_charge.search(x) != None:
             ch_mult = x[1:]
+    file.close()
     
     header=""
     for q in parameters:
@@ -56,7 +57,7 @@ def Gauss_log_to_abslines(log_file, title={},show_abs_lines_data=False,show_par=
     output = (title,wav,fs)
     
     return output
-    
+
 
 def abslines_to_molar_abs(input, show_plot=False, stdev=3099.6, wav_range=(200,1000)):
     import numpy as np
@@ -101,51 +102,59 @@ def abslines_to_molar_abs(input, show_plot=False, stdev=3099.6, wav_range=(200,1
     data = colour.SpectralDistribution(data=composite,domain=x,name=title)
     
     return data
-    
-    
-def abslines_to_molar_abs(input, show_plot=False, stdev=3099.6, wav_range=(200,1000)):
-    import numpy as np
-    import matplotlib.pyplot as plt
+
+
+def txt_spectrum_to_abs(text_file,title={},wav_range=(200,1000),separator="\t",from_Gaussian=False,
+                        header=True, col_wav=1, col_val=2, show_abs_data=False):
+    import re
+    import os
     import colour
+
+    txt_file = open(text_file, "r")
     
-    title,wav,fs = input
+    if title=={}:
+        title = os.path.basename(txt_file.name)
+    title = title.replace("_","-")
     
-    start=wav_range[0]
-    finish=wav_range[1]
-    points=finish-start
+    val = list()
+    wav = list()
 
-    # A sqrt(2) * standard deviation of 0.4 eV is 3099.6 nm. 0.1 eV is 12398.4 nm. 0.2 eV is 6199.2 nm, 0.33 eV = 3723.01 nm
-    bands = wav
-    f = fs
-
-    # Basic check that we have the same number of bands and oscillator strengths
-    if len(bands) != len(f):
-        print('Number of bands does not match the number of oscillator strengths.')
-        sys.exit()
-
-    def gaussBand(x, band, strength, stdev):
-        bandshape = 1.3062974e8 * (strength / (1e7/stdev))  * np.exp(-(((1.0/x)-(1.0/band))/(1.0/stdev))**2)
-        return bandshape
-
-    x = np.linspace(start,finish,points)
-
-    composite = 0
-    for i in range(0,len(bands),1):
-        peak = gaussBand(x, float(bands[i]), float(f[i]), stdev)
-        composite += peak
+    reg_spectra = re.compile("# Spectra")
+    reg_num = re.compile("[\d.]+")
     
-    if show_plot==True:
-        figg, axx = plt.subplots()
-        axx.plot(x,composite)
-        plt.xlabel('$\lambda$ / nm')
-        plt.ylabel('$\epsilon$ / L mol$^{-1}$ cm$^{-1}$')
-        plt.show()
+    if from_Gaussian:
+        ti=0
+        ri=0
+    elif header:
+        ti=1
+        ri=-1
+    else:
+        ti=1
+        ri=-2
+    
+    for k,x in enumerate(txt_file):
+        if reg_spectra.search(x) != None and from_Gaussian:
+            ti=1
+            ri=k
+        if ti==1 and k>ri+1:
+            found = reg_num.findall(x)
+            v = float(found[col_val-1])
+            w = float(found[col_wav-1])
+            if w >= wav_range[0] and w <= wav_range[1]:
+                val.append(found[col_val-1])
+                wav.append(found[col_wav-1])
+    #print(wav,val)
+    txt_file.close()
 
-    data = colour.SpectralDistribution(data=composite,domain=x,name=title)
+    if show_abs_data:
+        print("Wavelenths:\n  ",wav)
+        print("Abs:\n  ",val)
+    
+    data = colour.SpectralDistribution(data=val,domain=wav,name=title)
     
     return data
-    
-    
+
+
 def molar_abs_to_complement_abs(spectrum,OD=0.15,renormalize=True):
     import colour
     import numpy as np
@@ -167,8 +176,8 @@ def molar_abs_to_complement_abs(spectrum,OD=0.15,renormalize=True):
         export.append(exval)
         #print((wav[j],val[j],exval))
     return colour.SpectralDistribution(data=export,domain=wav,name=tit)
-    
-    
+
+
 def find_colour(spectrum, col_map_f='CIE 1931 2 Degree Standard Observer'):
     from matplotlib import rc
     import numpy as np
@@ -205,8 +214,8 @@ def find_colour(spectrum, col_map_f='CIE 1931 2 Degree Standard Observer'):
 #    plt.show()
 
     return RGB
-    
-    
+
+
 def spectrum_colour_analysis(file,title={}, stdev = 3096.01,renormalize = True,OD = 0.15, show_plot = False,
                          col_map_f="CIE 1931 2 Degree Standard Observer", wav_range=(200,1000), fancy_cols=True,
                          show_abs_lines_data=False, show_par=True, from_Gaussian=False, header=True, 
@@ -238,17 +247,14 @@ def spectrum_colour_analysis(file,title={}, stdev = 3096.01,renormalize = True,O
     from colour.plotting import (XYZ_to_plotting_colourspace,  filter_cmfs, CONSTANTS_COLOUR_STYLE )
     from colour.colorimetry import (CCS_ILLUMINANTS, wavelength_to_XYZ)
     from colour.utilities import (first_item, normalise_maximum)
-    
-    ###
     import re
     import os
     
-    xfile = open(file, "r")
-    
     reg_exten = re.compile("\.\w{2,4}$")
-
+    
+    xfile = open(file, "r")
     file_name = os.path.basename(xfile.name)
-
+    xfile.close()
     extension = reg_exten.findall(file_name)[0]
     
     if extension==".log":
@@ -257,11 +263,6 @@ def spectrum_colour_analysis(file,title={}, stdev = 3096.01,renormalize = True,O
     elif extension==".txt":
         spec1 = txt_spectrum_to_abs(file,title={},wav_range=wav_range,from_Gaussian=from_Gaussian,
                         header=header, col_wav=col_wav, col_val=col_val, show_abs_data=show_abs_data)
-    
-    ###
-    
-    #lines = Gauss_log_to_abslines(log_file,title=title,show_abs_lines_data=show_abs_lines_data,show_par=show_par)
-    #spec1 = abslines_to_molar_abs(lines, stdev=stdev, show_plot=show_plot,wav_range=wav_range)
     
     if title=={}:
         title=spec1.name
