@@ -1,0 +1,342 @@
+def Gauss_log_to_abslines(log_file, title={},show_abs_lines_data=False,show_par=True):
+    import re
+    import os
+
+    file = open(log_file, "r")
+    
+    if title=={}:
+        title = os.path.basename(file.name)
+    title = title.replace("_","-")
+    
+    list_file = list()
+    fs = list()
+    wav = list()
+    
+    parameters = list()
+
+    reg_exc = re.compile("Excited State")
+    reg_wav = re.compile("\s[\d.]*\snm")
+    reg_f = re.compile("f\=[\d.]*\s")
+    reg_par = re.compile("^(\s?#)p\s")
+    reg_line = re.compile("^(\s?-)-*")
+    reg_charge = re.compile("^\s?Charge.*\sMultiplicity")
+    
+    ki=0
+    for x in file:
+        #print(x)
+        if reg_exc.search(x) != None:
+            list_file.append(x)
+        if ki==1:
+            if reg_line.search(x) == None:
+                parameters.append(x)
+            else:
+                ki = 0
+        if reg_par.search(x) != None:
+            parameters.append(x)
+            ki = 1
+        if reg_charge.search(x) != None:
+            ch_mult = x[1:]
+    
+    header=""
+    for q in parameters:
+        header = header + q[1:len(q)-1]
+    
+    if show_par:
+        print("Parameters:\n  ",header,"\n  ",ch_mult)
+
+    for y in list_file:
+        loc_wav = reg_wav.search(y)
+        loc_f = reg_f.search(y)
+        wav.append(y[loc_wav.start()+1 : loc_wav.end()-3])
+        fs.append(y[loc_f.start()+2 : loc_f.end()-1])
+    if show_abs_lines_data:
+        print("Wavelenths:\n  ",wav)
+        print("f:\n  ",fs)
+    
+    output = (title,wav,fs)
+    
+    return output
+    
+
+def abslines_to_molar_abs(input, show_plot=False, stdev=3099.6, wav_range=(200,1000)):
+    import numpy as np
+    import matplotlib.pyplot as plt
+    import colour
+    
+    title,wav,fs = input
+    
+    start=wav_range[0]
+    finish=wav_range[1]
+    points=finish-start
+
+    # A sqrt(2) * standard deviation of 0.4 eV is 3099.6 nm. 0.1 eV is 12398.4 nm. 0.2 eV is 6199.2 nm, 0.33 eV = 3723.01 nm
+    bands = wav
+    f = fs
+
+    # Basic check that we have the same number of bands and oscillator strengths
+    if len(bands) != len(f):
+        print('Number of bands does not match the number of oscillator strengths.')
+        sys.exit()
+
+    def gaussBand(x, band, strength, stdev):
+        bandshape = 1.3062974e8 * (strength / (1e7/stdev))  * np.exp(-(((1.0/x)-(1.0/band))/(1.0/stdev))**2)
+        return bandshape
+
+    x = np.linspace(start,finish,points)
+
+    composite = 0
+    for i in range(0,len(bands),1):
+        peak = gaussBand(x, float(bands[i]), float(f[i]), stdev)
+        composite += peak
+    
+    if show_plot==True:
+        figg, axx = plt.subplots()
+        axx.plot(x,composite)
+        plt.xlabel('$\lambda$ / nm')
+        plt.ylabel('$\epsilon$ / L mol$^{-1}$ cm$^{-1}$')
+        plt.show()
+
+    #data = np.stack((x,composite),axis=1)
+
+    data = colour.SpectralDistribution(data=composite,domain=x,name=title)
+    
+    return data
+    
+    
+def abslines_to_molar_abs(input, show_plot=False, stdev=3099.6, wav_range=(200,1000)):
+    import numpy as np
+    import matplotlib.pyplot as plt
+    import colour
+    
+    title,wav,fs = input
+    
+    start=wav_range[0]
+    finish=wav_range[1]
+    points=finish-start
+
+    # A sqrt(2) * standard deviation of 0.4 eV is 3099.6 nm. 0.1 eV is 12398.4 nm. 0.2 eV is 6199.2 nm, 0.33 eV = 3723.01 nm
+    bands = wav
+    f = fs
+
+    # Basic check that we have the same number of bands and oscillator strengths
+    if len(bands) != len(f):
+        print('Number of bands does not match the number of oscillator strengths.')
+        sys.exit()
+
+    def gaussBand(x, band, strength, stdev):
+        bandshape = 1.3062974e8 * (strength / (1e7/stdev))  * np.exp(-(((1.0/x)-(1.0/band))/(1.0/stdev))**2)
+        return bandshape
+
+    x = np.linspace(start,finish,points)
+
+    composite = 0
+    for i in range(0,len(bands),1):
+        peak = gaussBand(x, float(bands[i]), float(f[i]), stdev)
+        composite += peak
+    
+    if show_plot==True:
+        figg, axx = plt.subplots()
+        axx.plot(x,composite)
+        plt.xlabel('$\lambda$ / nm')
+        plt.ylabel('$\epsilon$ / L mol$^{-1}$ cm$^{-1}$')
+        plt.show()
+
+    data = colour.SpectralDistribution(data=composite,domain=x,name=title)
+    
+    return data
+    
+    
+def molar_abs_to_complement_abs(spectrum,OD=0.15,renormalize=True):
+    import colour
+    import numpy as np
+    #numpy.seterr(divide='ignore') 
+    
+    val = spectrum.values
+    wav = spectrum.wavelengths
+    tit = spectrum.name
+    export = list()
+    top = max(spectrum.values)
+    
+    norm = OD/top if renormalize==True else 1
+    
+    for j in range(0,len(val),1):
+        expo = val[j]*norm
+        if expo < 1e-10:
+            expo = 1e-10
+        exval = -np.log10(1-10**(-expo))
+        export.append(exval)
+        #print((wav[j],val[j],exval))
+    return colour.SpectralDistribution(data=export,domain=wav,name=tit)
+    
+    
+def find_colour(spectrum, col_map_f='CIE 1931 2 Degree Standard Observer'):
+    from matplotlib import rc
+    import numpy as np
+    import colour
+    import matplotlib.patches as mpatches
+    from matplotlib import pyplot as plt
+    from matplotlib.pyplot import figure
+    
+    cmfs = colour.MSDS_CMFS[col_map_f]
+    illuminant = colour.SDS_ILLUMINANTS['D65']
+    
+    val = spectrum.values
+    wavs = spectrum.wavelengths
+
+    XYZ = colour.sd_to_XYZ(spectrum.align(colour.SpectralShape(min(wavs), max(wavs), 1)), cmfs, illuminant)
+    RGB = colour.XYZ_to_sRGB(XYZ / 100)
+    for i in range(0,3,1):
+        if RGB[i]<0:
+            RGB[i] = 0
+        if RGB[i]>1:
+            RGB[i]=1
+
+#    rc('font',**{'family':'sans-serif','sans-serif':['Helvetica'],'size': 13})
+#    rc('text', usetex=True)
+#    rc('text.latex', preamble=r'\usepackage{amsmath} \usepackage{mhchem, physics}' )
+#    plt.rcParams['xtick.bottom'] = plt.rcParams['xtick.labelbottom'] = True
+#    plt.rcParams['xtick.top'] = plt.rcParams['xtick.labeltop'] = False
+
+#    fig, ax = plt.subplots(num=None, figsize=(2,2), dpi=300, facecolor='w', edgecolor='k')
+#    plt.axis([0, 1, 0, 1])
+#    ax.set_facecolor(RGB)
+#    plt.xlabel(f'$\\mathrm{{RGB}}({["%.3f" % i for i in RGB]})$')
+#    plt.setp((ax.get_yticklabels(), ax.get_yticklines(),ax.get_xticklabels(),ax.get_xticklines()), visible=False)
+#    plt.show()
+
+    return RGB
+    
+    
+def spectrum_colour_analysis(file,title={}, stdev = 3096.01,renormalize = True,OD = 0.15, show_plot = False,
+                         col_map_f="CIE 1931 2 Degree Standard Observer", wav_range=(200,1000), fancy_cols=True,
+                         show_abs_lines_data=False, show_par=True, from_Gaussian=False, header=True, 
+                         col_wav=1, col_val=2, show_abs_data=False):
+    # available kwargs:
+    #    title                   - set the title for the spectrum (imported file name is set by default)
+    #    wav_range = (min,max)   - set the limit wavelength to be plotted
+    #    stdev = 3096.01         - Gaussian width
+    #    renormalize = True      - the molar abs. sprectrum is converted into an absorption spectrum of defined peak OD
+    #    OD = 0.15               - target OD to convert the molar abs. spectrum into (i.e. target sample dilution)
+    #    show_plot = False       - show raw molar abs. spectra
+    #    show_par = True         - show calculation parameters imported from .log
+    #    show_abs_lines_data = False  - show excitation wavelength and abs. dipole strengths data imported from .log
+    #    col_map_f               - choose color mapping function (see colour-science package documentation), "CIE 1931 2 Degree Standard Observer" set by default
+    #    fancy_cols = True       - display colours
+    #    from_Gaussian = True    - imported .txt file has GaussView spectrum format
+    #    header = True           - imported .txt file has a single row header
+    #    col_wav = 1             - index (1,2,...) of column with wavelength data in imported .txt file
+    #    col_val = 2             - index (1,2,...) of column with abs. spectrum data in imported .txt file
+    
+    
+    import colour
+    import numpy as np
+    from matplotlib import pyplot as plt
+    from matplotlib import rc
+    from matplotlib.pyplot import figure
+    from matplotlib import gridspec
+    from matplotlib.patches import Polygon
+    from colour.plotting import (XYZ_to_plotting_colourspace,  filter_cmfs, CONSTANTS_COLOUR_STYLE )
+    from colour.colorimetry import (CCS_ILLUMINANTS, wavelength_to_XYZ)
+    from colour.utilities import (first_item, normalise_maximum)
+    
+    ###
+    import re
+    import os
+    
+    xfile = open(file, "r")
+    
+    reg_exten = re.compile("\.\w{2,4}$")
+
+    file_name = os.path.basename(xfile.name)
+
+    extension = reg_exten.findall(file_name)[0]
+    
+    if extension==".log":
+        lines = Gauss_log_to_abslines(file,title=title,show_abs_lines_data=show_abs_lines_data,show_par=show_par)
+        spec1 = abslines_to_molar_abs(lines, stdev=stdev, show_plot=show_plot,wav_range=wav_range)
+    elif extension==".txt":
+        spec1 = txt_spectrum_to_abs(file,title={},wav_range=wav_range,from_Gaussian=from_Gaussian,
+                        header=header, col_wav=col_wav, col_val=col_val, show_abs_data=show_abs_data)
+    
+    ###
+    
+    #lines = Gauss_log_to_abslines(log_file,title=title,show_abs_lines_data=show_abs_lines_data,show_par=show_par)
+    #spec1 = abslines_to_molar_abs(lines, stdev=stdev, show_plot=show_plot,wav_range=wav_range)
+    
+    if title=={}:
+        title=spec1.name
+    
+    spec2 = molar_abs_to_complement_abs(spec1, renormalize=renormalize,OD=OD)
+    RGB = find_colour(spec2, col_map_f=col_map_f)
+    
+    output=[spec1,spec2,RGB]
+
+
+    rc('font',**{'family':'sans-serif','sans-serif':['Helvetica'],'size': 13})
+    rc('text', usetex=True)
+    rc('text.latex', preamble=r'\usepackage{amsmath} \usepackage{mhchem, physics} \usepackage[utf8]{inputenc} \usepackage{textcomp}' )
+
+    plt.rcParams['xtick.bottom'] = plt.rcParams['xtick.labelbottom'] = True
+    plt.rcParams['xtick.top'] = plt.rcParams['xtick.labeltop'] = False
+
+    fig, axes = plt.subplots(num=None, figsize=(11, 4), dpi=350, facecolor='w', edgecolor='k')
+
+    gs = gridspec.GridSpec(ncols=3, nrows=1, width_ratios=[5, 5, 1], figure=fig) 
+
+    for i in [0,1]:
+        ax = plt.subplot(gs[i])
+        wavelengths = output[i].wavelengths
+        values = output[i].values
+        ax.plot(wavelengths,values, linewidth=1.2, color='k')
+        ax.set_xlabel(r'$\mathrm{vlnov\acute{a} \: d\acute{e}lka} \: \lambda \: [\mathrm{nm}]$')
+        ax.set_xlim(min(wavelengths),max(wavelengths))
+        ax.set_ylim(0, max(values))
+        if i==0:
+            ax.set_title(label=f'$\\mathrm{{{output[i].name}}}$')
+            ax.set_ylabel(r'$ \epsilon \: [\mathrm{dm}^3 \cdot \mathrm{mol}^{-1} \cdot \mathrm{cm}^{-1}]$')
+        elif i==1: 
+            ax.set_title(label=f'$\\mathrm{{{output[i].name} \: (\\check{{r}}ed\\check{{e}}no)}}$')
+            ax.set_ylabel(r'$ "1-A" \: [\mathrm{a.u.}]$')
+        
+        if fancy_cols==True:
+            cmfs = first_item(filter_cmfs(col_map_f).values())
+            wlen_cmfs = [n for n in wavelengths if n > cmfs.shape.start and n < cmfs.shape.end]
+
+            clr = XYZ_to_plotting_colourspace(
+                wavelength_to_XYZ(wlen_cmfs, cmfs),
+                CCS_ILLUMINANTS['CIE 1931 2 Degree Standard Observer']['E'],
+                apply_cctf_encoding=False)
+
+            clr = normalise_maximum(clr)
+            clr = CONSTANTS_COLOUR_STYLE.colour.colourspace.cctf_encoding(clr)
+
+            polygon = Polygon(
+                np.vstack([
+                    [min(wavelengths), 0],
+                    np.array([wavelengths, values]).T.tolist(),
+                    [max(wavelengths), 0],
+                ]),
+                facecolor='none',
+                edgecolor='none')
+            ax.add_patch(polygon)
+
+            padding = 0.1
+            
+            for dom,col in [(wavelengths-padding,'black'),(wlen_cmfs,clr)]:
+                ax.bar(
+                x=dom,
+                height=max(values),
+                width=1 + padding,
+                color=col,
+                align='edge',
+                clip_path=polygon)
+
+    ax2 = plt.subplot(gs[2])
+
+    ax2.set_facecolor(output[2])
+    ax2.set_ylabel(f'$\\mathrm{{RGB}}({["%.3f" % i for i in output[2]]})$')
+    plt.setp((ax2.get_yticklabels(), ax2.get_yticklines(),ax2.get_xticklabels(),ax2.get_xticklines()), visible=False)
+
+    plt.show()
+    
+    #return output
