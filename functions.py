@@ -97,8 +97,6 @@ def abslines_to_molar_abs(input, show_plot=False, stdev=3099.6, wav_range=(200,1
         plt.ylabel('$\epsilon$ / L mol$^{-1}$ cm$^{-1}$')
         plt.show()
 
-    #data = np.stack((x,composite),axis=1)
-
     data = colour.SpectralDistribution(data=composite,domain=x,name=title)
     
     return data
@@ -143,7 +141,6 @@ def txt_spectrum_to_abs(text_file,title={},wav_range=(200,1000),separator="\t",f
             if w >= wav_range[0] and w <= wav_range[1]:
                 val.append(found[col_val-1])
                 wav.append(found[col_wav-1])
-    #print(wav,val)
     txt_file.close()
 
     if show_abs_data:
@@ -200,26 +197,13 @@ def find_colour(spectrum, col_map_f='CIE 1931 2 Degree Standard Observer'):
         if RGB[i]>1:
             RGB[i]=1
 
-#    rc('font',**{'family':'sans-serif','sans-serif':['Helvetica'],'size': 13})
-#    rc('text', usetex=True)
-#    rc('text.latex', preamble=r'\usepackage{amsmath} \usepackage{mhchem, physics}' )
-#    plt.rcParams['xtick.bottom'] = plt.rcParams['xtick.labelbottom'] = True
-#    plt.rcParams['xtick.top'] = plt.rcParams['xtick.labeltop'] = False
-
-#    fig, ax = plt.subplots(num=None, figsize=(2,2), dpi=300, facecolor='w', edgecolor='k')
-#    plt.axis([0, 1, 0, 1])
-#    ax.set_facecolor(RGB)
-#    plt.xlabel(f'$\\mathrm{{RGB}}({["%.3f" % i for i in RGB]})$')
-#    plt.setp((ax.get_yticklabels(), ax.get_yticklines(),ax.get_xticklabels(),ax.get_xticklines()), visible=False)
-#    plt.show()
-
     return RGB
 
 
 def spectrum_colour_analysis(file,title={}, stdev = 3096.01,renormalize = True,OD = 0.15, show_plot = False,
                          col_map_f="CIE 1931 2 Degree Standard Observer", wav_range=(200,1000), fancy_cols=True,
                          show_abs_lines_data=False, show_par=True, from_Gaussian=False, header=True, 
-                         col_wav=1, col_val=2, show_abs_data=False):
+                         col_wav=1, col_val=2, show_abs_data=False, give_raw_data=True):
     # available kwargs:
     #    title                   - set the title for the spectrum (imported file name is set by default)
     #    wav_range = (min,max)   - set the limit wavelength to be plotted
@@ -229,12 +213,13 @@ def spectrum_colour_analysis(file,title={}, stdev = 3096.01,renormalize = True,O
     #    show_plot = False       - show raw molar abs. spectra
     #    show_par = True         - show calculation parameters imported from .log
     #    show_abs_lines_data = False  - show excitation wavelength and abs. dipole strengths data imported from .log
-    #    col_map_f               - choose color mapping function (see colour-science package documentation), "CIE 1931 2 Degree Standard Observer" set by default
+    #    col_map_f               - color mapping function (see colour-science package documentation), "CIE 1931 2 Degree Standard Observer" set by default
     #    fancy_cols = True       - display colours
-    #    from_Gaussian = True    - imported .txt file has GaussView spectrum format
+    #    from_Gaussian = False    - imported .txt file has GaussView spectrum format
     #    header = True           - imported .txt file has a single row header
     #    col_wav = 1             - index (1,2,...) of column with wavelength data in imported .txt file
     #    col_val = 2             - index (1,2,...) of column with abs. spectrum data in imported .txt file
+    #    give_raw_data = True    - return raw data (colour.SpectralDistribution) and rgb code as [sd1,sd2,RGB]
     
     
     import colour
@@ -303,6 +288,7 @@ def spectrum_colour_analysis(file,title={}, stdev = 3096.01,renormalize = True,O
             cmfs = first_item(filter_cmfs(col_map_f).values())
             wlen_cmfs = [n for n in wavelengths if n > cmfs.shape.start and n < cmfs.shape.end]
 
+            #global clr
             clr = XYZ_to_plotting_colourspace(
                 wavelength_to_XYZ(wlen_cmfs, cmfs),
                 CCS_ILLUMINANTS['CIE 1931 2 Degree Standard Observer']['E'],
@@ -340,4 +326,78 @@ def spectrum_colour_analysis(file,title={}, stdev = 3096.01,renormalize = True,O
 
     plt.show()
     
-    #return output
+    if give_raw_data:
+        return output
+
+
+def plot_multiple(*inputs,wav_range=(300,1000)):
+    import colour
+    import numpy as np
+    from matplotlib import pyplot as plt
+    from matplotlib import rc
+    from matplotlib.pyplot import figure
+    from matplotlib import gridspec
+    from matplotlib.patches import Polygon
+    
+    # Deactivating the MatplotlibDeprecationWarning ... if they pop up
+    #import warnings
+    #import matplotlib.cbook
+    #warnings.filterwarnings("ignore",category=matplotlib.cbook.mplDeprecation)
+    #
+    
+    fig = plt.figure(figsize=(11,4), dpi=350, facecolor='w', edgecolor='k')
+    gs0 = fig.add_gridspec(nrows=1, ncols=3, width_ratios=[6,6,1])    #, height_ratios=[1/len(inputs)]*len(inputs))
+    
+    gs00 = gs0[2].subgridspec(nrows=len(inputs), ncols=1)
+    
+    rc('font',**{'family':'sans-serif','sans-serif':['Helvetica'],'size': 13})
+    rc('text', usetex=True)
+    rc('text.latex', preamble=r'\usepackage{amsmath} \usepackage{mhchem, physics} \usepackage[utf8]{inputenc} \usepackage{textcomp}' )
+    
+    w_range = list(wav_range)
+    legend = list()
+    ax2 = [None]*len(inputs)
+    
+    for i, data in enumerate(inputs):
+        w_min = min(data[0].wavelengths)
+        w_max = max(data[0].wavelengths)
+        if w_min > w_range[0]:
+            w_range[0] = w_min
+        if w_max < w_range[1]:
+            w_range[1] = w_max
+        legend.append("$\mathrm{("+str(i+1)+")\:"+data[0].name+"}$")
+            
+        norm0=max(data[0].values)        
+        ax0 = plt.subplot(gs0[0])
+        wavelengths0 = data[0].wavelengths
+        values0 = data[0].values/norm0
+        ax0.plot(wavelengths0, values0, linewidth=1)
+        ax0.set_xlim(w_range)
+        ax0.set_ylim(0,1)
+        
+        norm1=max(data[1].values)
+        ax1 = plt.subplot(gs0[1])
+        wavelengths1 = data[1].wavelengths
+        values1 = data[1].values/norm1
+        ax1.plot(wavelengths1, values1, linewidth=1)
+        ax1.set_xlim(w_range)
+        ax1.set_ylim(0,1)
+        
+        ax2[i] = plt.subplot(gs00[i])
+        ax2[i].set_xlim(0,1)
+        ax2[i].set_ylim(0,1)
+        plt.setp((ax2[i].get_yticklabels(), ax2[i].get_yticklines(),ax2[i].get_xticklabels(),
+                  ax2[i].get_xticklines()), visible=False)
+        ax2[i].set_facecolor(data[2])
+        ax2[i].text(0.52, 0.5, f'$({i+1})$', va='center', ha='center')
+    
+    ax0.set_title("$\mathrm{Abs}$")
+    ax1.set_title("$\mathrm{Refl}$")
+    
+    numcol = 2 if len(inputs)==2 or len(inputs)==4 else 3
+    ax1.legend(labels=legend, bbox_to_anchor=(-0.1, -0.1), loc='upper center', ncol=numcol, 
+           frameon=False, columnspacing=5)
+    
+    plt.subplots_adjust(hspace=.0)
+    
+    plt.show()
