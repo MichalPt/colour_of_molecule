@@ -1,4 +1,4 @@
-def Gauss_log_to_abslines(log_file, title={},show_abs_lines_data=False,show_par=True):
+def Gauss_log_to_abslines(log_file, title={},show_abs_lines_data=False,show_par=True, wav_shift=0.0):
     import re
     import os
 
@@ -48,9 +48,15 @@ def Gauss_log_to_abslines(log_file, title={},show_abs_lines_data=False,show_par=
     for y in list_file:
         loc_wav = reg_wav.search(y)
         loc_f = reg_f.search(y)
-        wav.append(y[loc_wav.start()+1 : loc_wav.end()-3])
-        fs.append(y[loc_f.start()+2 : loc_f.end()-1])
+        wav.append(float(y[loc_wav.start()+1 : loc_wav.end()-3])+wav_shift)
+        fs.append(float(y[loc_f.start()+2 : loc_f.end()-1]))
+        
+    if wav==[]:
+        print("Error in file import. Check the encoding of .txt file and eventually change it to ANSI.")
+        
     if show_abs_lines_data:
+        if wav_shift!=0: 
+            print("Shift applied to wavelengths:\n  ",wav_shift," nm")
         print("Wavelenths:\n  ",wav)
         print("f:\n  ",fs)
     
@@ -68,7 +74,7 @@ def abslines_to_molar_abs(input, show_plot=False, stdev=3099.6, wav_range=(200,1
     
     start=wav_range[0]
     finish=wav_range[1]
-    points=finish-start
+    points=finish-start #i.e. 1 nm
 
     # A sqrt(2) * standard deviation of 0.4 eV is 3099.6 nm. 0.1 eV is 12398.4 nm. 0.2 eV is 6199.2 nm, 0.33 eV = 3723.01 nm
     bands = wav
@@ -102,11 +108,12 @@ def abslines_to_molar_abs(input, show_plot=False, stdev=3099.6, wav_range=(200,1
     return data
 
 
-def txt_spectrum_to_abs(text_file,title={},wav_range=(200,1000),separator="\t",from_Gaussian=False,
+def txt_spectrum_to_abs(text_file,title={},wav_range=(200,1000),from_Gaussian=False,
                         header=True, col_wav=1, col_val=2, show_abs_data=False):
     import re
     import os
     import colour
+    import numpy as np
 
     txt_file = open(text_file, "r")
     
@@ -136,19 +143,24 @@ def txt_spectrum_to_abs(text_file,title={},wav_range=(200,1000),separator="\t",f
             ri=k
         if ti==1 and k>ri+1:
             found = reg_num.findall(x)
+            #print(found)
             v = float(found[col_val-1])
             w = float(found[col_wav-1])
-            if w >= wav_range[0] and w <= wav_range[1]:
-                val.append(found[col_val-1])
-                wav.append(found[col_wav-1])
+            #if w >= wav_range[0] and w <= wav_range[1]:
+            val.append(v)
+            wav.append(w)
     txt_file.close()
 
     if show_abs_data:
         print("Wavelenths:\n  ",wav)
         print("Abs:\n  ",val)
-    
-    data = colour.SpectralDistribution(data=val,domain=wav,name=title)
-    
+    #print(wav)
+    try:
+        data0 = colour.SpectralDistribution(data=val,domain=wav,name=title)
+    except:
+        print("Error while creating SD. Imported data might not be well formated or ordered.")
+    data = data0.interpolate(colour.SpectralShape(np.floor(wav_range[0]),np.floor(wav_range[1]),1))
+    #print(data)
     return data
 
 
@@ -172,7 +184,9 @@ def molar_abs_to_complement_abs(spectrum,OD=0.15,renormalize=True):
         exval = -np.log10(1-10**(-expo))
         export.append(exval)
         #print((wav[j],val[j],exval))
-    return colour.SpectralDistribution(data=export,domain=wav,name=tit)
+    out = colour.SpectralDistribution(data=export,domain=wav,name=tit)
+    #print(out)
+    return out
 
 
 def find_colour(spectrum, col_map_f='CIE 1931 2 Degree Standard Observer'):
@@ -188,8 +202,12 @@ def find_colour(spectrum, col_map_f='CIE 1931 2 Degree Standard Observer'):
     
     val = spectrum.values
     wavs = spectrum.wavelengths
-
-    XYZ = colour.sd_to_XYZ(spectrum.align(colour.SpectralShape(min(wavs), max(wavs), 1)), cmfs, illuminant)
+    
+    try:
+        XYZ = colour.sd_to_XYZ(spectrum, cmfs, illuminant)
+    except:
+        XYZ = colour.sd_to_XYZ(spectrum.interpolate(colour.SpectralShape(min(wavs), max(wavs), 1)), cmfs, illuminant)
+        
     RGB = colour.XYZ_to_sRGB(XYZ / 100)
     for i in range(0,3,1):
         if RGB[i]<0:
@@ -203,7 +221,7 @@ def find_colour(spectrum, col_map_f='CIE 1931 2 Degree Standard Observer'):
 def spectrum_colour_analysis(file,title={}, stdev = 3096.01,renormalize = True,OD = 0.15, show_plot = False,
                          col_map_f="CIE 1931 2 Degree Standard Observer", wav_range=(200,1000), fancy_cols=True,
                          show_abs_lines_data=False, show_par=True, from_Gaussian=False, header=True, 
-                         col_wav=1, col_val=2, show_abs_data=False, give_raw_data=True):
+                         col_wav=1, col_val=2, show_abs_data=False, give_raw_data=True, wav_shift=0.0):
     # available kwargs:
     #    title                   - set the title for the spectrum (imported file name is set by default)
     #    wav_range = (min,max)   - set the limit wavelength to be plotted
@@ -220,6 +238,7 @@ def spectrum_colour_analysis(file,title={}, stdev = 3096.01,renormalize = True,O
     #    col_wav = 1             - index (1,2,...) of column with wavelength data in imported .txt file
     #    col_val = 2             - index (1,2,...) of column with abs. spectrum data in imported .txt file
     #    give_raw_data = True    - return raw data (colour.SpectralDistribution) and rgb code as [sd1,sd2,RGB]
+    #    wav_shift = 0           - artificially move with the calculated spectral values along the wavelengths to see a colour change
     
     
     import colour
@@ -232,6 +251,8 @@ def spectrum_colour_analysis(file,title={}, stdev = 3096.01,renormalize = True,O
     from colour.plotting import (XYZ_to_plotting_colourspace,  filter_cmfs, CONSTANTS_COLOUR_STYLE )
     from colour.colorimetry import (CCS_ILLUMINANTS, wavelength_to_XYZ)
     from colour.utilities import (first_item, normalise_maximum)
+    
+    ###
     import re
     import os
     
@@ -243,10 +264,11 @@ def spectrum_colour_analysis(file,title={}, stdev = 3096.01,renormalize = True,O
     extension = reg_exten.findall(file_name)[0]
     
     if extension==".log":
-        lines = Gauss_log_to_abslines(file,title=title,show_abs_lines_data=show_abs_lines_data,show_par=show_par)
+        lines = Gauss_log_to_abslines(file,title=title,show_abs_lines_data=show_abs_lines_data,
+                                      wav_shift=wav_shift,show_par=show_par)
         spec1 = abslines_to_molar_abs(lines, stdev=stdev, show_plot=show_plot,wav_range=wav_range)
     elif extension==".txt":
-        spec1 = txt_spectrum_to_abs(file,title={},wav_range=wav_range,from_Gaussian=from_Gaussian,
+        spec1 = txt_spectrum_to_abs(file,title=title,wav_range=wav_range,from_Gaussian=from_Gaussian,
                         header=header, col_wav=col_wav, col_val=col_val, show_abs_data=show_abs_data)
     
     if title=={}:
@@ -257,7 +279,6 @@ def spectrum_colour_analysis(file,title={}, stdev = 3096.01,renormalize = True,O
     
     output=[spec1,spec2,RGB]
 
-
     rc('font',**{'family':'sans-serif','sans-serif':['Helvetica'],'size': 13})
     rc('text', usetex=True)
     rc('text.latex', preamble=r'\usepackage{amsmath} \usepackage{mhchem, physics} \usepackage[utf8]{inputenc} \usepackage{textcomp}' )
@@ -265,9 +286,9 @@ def spectrum_colour_analysis(file,title={}, stdev = 3096.01,renormalize = True,O
     plt.rcParams['xtick.bottom'] = plt.rcParams['xtick.labelbottom'] = True
     plt.rcParams['xtick.top'] = plt.rcParams['xtick.labeltop'] = False
 
-    fig, axes = plt.subplots(num=None, figsize=(11, 4), dpi=350, facecolor='w', edgecolor='k')
+    fig, axes = plt.subplots(num=None, figsize=(11, 4), dpi=400, facecolor='w', edgecolor='k')
 
-    gs = gridspec.GridSpec(ncols=3, nrows=1, width_ratios=[5, 5, 1], figure=fig) 
+    gs = gridspec.GridSpec(ncols=3, nrows=1, width_ratios=[5, 5, 1], figure=fig, wspace=0.25) 
 
     for i in [0,1]:
         ax = plt.subplot(gs[i])
@@ -277,11 +298,15 @@ def spectrum_colour_analysis(file,title={}, stdev = 3096.01,renormalize = True,O
         ax.set_xlabel(r'$\mathrm{vlnov\acute{a} \: d\acute{e}lka} \: \lambda \: [\mathrm{nm}]$')
         ax.set_xlim(min(wavelengths),max(wavelengths))
         ax.set_ylim(0, max(values))
+        plt.locator_params(axis='y', nbins=5)
+        ax.ticklabel_format(axis="y",style="sci",scilimits=(-1,1))
         if i==0:
-            ax.set_title(label=f'$\\mathrm{{{output[i].name}}}$')
+            #ax.set_title(label=f'$\\mathrm{{{output[i].name}}}$')
+            ax.set_title(label=output[i].name)
             ax.set_ylabel(r'$ \epsilon \: [\mathrm{dm}^3 \cdot \mathrm{mol}^{-1} \cdot \mathrm{cm}^{-1}]$')
         elif i==1: 
-            ax.set_title(label=f'$\\mathrm{{{output[i].name} \: (\\check{{r}}ed\\check{{e}}no)}}$')
+            #ax.set_title(label=f'$\\mathrm{{{output[i].name} \: (K)}}$')
+            ax.set_title(label=output[i].name + "\: $\mathrm{(K)}$")
             ax.set_ylabel(r'$ "1-A" \: [\mathrm{a.u.}]$')
         
         if fancy_cols==True:
@@ -323,14 +348,14 @@ def spectrum_colour_analysis(file,title={}, stdev = 3096.01,renormalize = True,O
     ax2.set_facecolor(output[2])
     ax2.set_ylabel(f'$\\mathrm{{RGB}}({["%.3f" % i for i in output[2]]})$')
     plt.setp((ax2.get_yticklabels(), ax2.get_yticklines(),ax2.get_xticklabels(),ax2.get_xticklines()), visible=False)
-
+    
     plt.show()
     
     if give_raw_data:
         return output
 
-
-def plot_multiple(*inputs,wav_range=(300,1000)):
+    
+def plot_multiple(*inputs,wav_range=(300,1000),plot_kwargs={'linewidth':1},plot_kwargs_of_nth={}):
     import colour
     import numpy as np
     from matplotlib import pyplot as plt
@@ -339,16 +364,16 @@ def plot_multiple(*inputs,wav_range=(300,1000)):
     from matplotlib import gridspec
     from matplotlib.patches import Polygon
     
-    # Deactivating the MatplotlibDeprecationWarning ... if they pop up
-    #import warnings
-    #import matplotlib.cbook
-    #warnings.filterwarnings("ignore",category=matplotlib.cbook.mplDeprecation)
+    # Deactivating the MatplotlibDeprecationWarning ...
+    import warnings
+    import matplotlib.cbook
+    warnings.filterwarnings("ignore",category=matplotlib.cbook.mplDeprecation)
     #
     
-    fig = plt.figure(figsize=(11,4), dpi=350, facecolor='w', edgecolor='k')
+    fig = plt.figure(figsize=(11,4), dpi=400, facecolor='w', edgecolor='k')
     gs0 = fig.add_gridspec(nrows=1, ncols=3, width_ratios=[6,6,1])    #, height_ratios=[1/len(inputs)]*len(inputs))
     
-    gs00 = gs0[2].subgridspec(nrows=len(inputs), ncols=1)
+    gs00 = gs0[2].subgridspec(nrows=len(inputs), ncols=1,wspace=0.25)
     
     rc('font',**{'family':'sans-serif','sans-serif':['Helvetica'],'size': 13})
     rc('text', usetex=True)
@@ -358,6 +383,9 @@ def plot_multiple(*inputs,wav_range=(300,1000)):
     legend = list()
     ax2 = [None]*len(inputs)
     
+    ax0 = plt.subplot(gs0[0])
+    ax1 = plt.subplot(gs0[1])
+    
     for i, data in enumerate(inputs):
         w_min = min(data[0].wavelengths)
         w_max = max(data[0].wavelengths)
@@ -365,23 +393,23 @@ def plot_multiple(*inputs,wav_range=(300,1000)):
             w_range[0] = w_min
         if w_max < w_range[1]:
             w_range[1] = w_max
-        legend.append("$\mathrm{("+str(i+1)+")\:"+data[0].name+"}$")
-            
-        norm0=max(data[0].values)        
-        ax0 = plt.subplot(gs0[0])
+        legend.append("$\mathrm{("+str(i+1)+")}$\:"+data[0].name)
+    for i, data in enumerate(inputs):
         wavelengths0 = data[0].wavelengths
+        norm0=max([data[0].values[n] for n,m in enumerate(wavelengths0) if m<=w_range[1] and m>=w_range[0]])        
         values0 = data[0].values/norm0
-        ax0.plot(wavelengths0, values0, linewidth=1)
-        ax0.set_xlim(w_range)
-        ax0.set_ylim(0,1)
         
-        norm1=max(data[1].values)
-        ax1 = plt.subplot(gs0[1])
-        wavelengths1 = data[1].wavelengths
-        values1 = data[1].values/norm1
-        ax1.plot(wavelengths1, values1, linewidth=1)
-        ax1.set_xlim(w_range)
-        ax1.set_ylim(0,1)
+        wavelengths1 = data[1].wavelengths          
+        norm1=max([data[1].values[n] for n,m in enumerate(wavelengths1) if m<=w_range[1] and m>=w_range[0]]) 
+        values1 = data[1].values/norm1          
+        
+        try:
+            kw = plot_kwargs_of_nth[i+1]
+            ax0.plot(wavelengths0, values0, **plot_kwargs, **kw)
+            ax1.plot(wavelengths1, values1, **plot_kwargs, **kw)
+        except:
+            ax0.plot(wavelengths0, values0, **plot_kwargs)
+            ax1.plot(wavelengths1, values1, **plot_kwargs)
         
         ax2[i] = plt.subplot(gs00[i])
         ax2[i].set_xlim(0,1)
@@ -391,13 +419,23 @@ def plot_multiple(*inputs,wav_range=(300,1000)):
         ax2[i].set_facecolor(data[2])
         ax2[i].text(0.52, 0.5, f'$({i+1})$', va='center', ha='center')
     
-    ax0.set_title("$\mathrm{Abs}$")
-    ax1.set_title("$\mathrm{Refl}$")
+    ax0.set_xlim(w_range)
+    ax0.set_ylim(0,1)
+    ax0.set_yticks([0.0,0.5,1.0])
+    ax0.set_xlabel(r'$\mathrm{vlnov\acute{a} \: d\acute{e}lka} \: \lambda \: [\mathrm{nm}]$')
+    ax1.set_xlim(w_range)
+    ax1.set_ylim(0,1)
+    ax1.set_yticks([0.0,0.5,1.0])
+    ax1.set_xlabel(r'$\mathrm{vlnov\acute{a} \: d\acute{e}lka} \: \lambda \: [\mathrm{nm}]$')
+    
+    ax0.set_title("$\\boldsymbol{\\mathrm{A}}$")
+    ax1.set_title("$\\boldsymbol{\\mathrm{B}}$")
+    ax2[0].set_title("$\\boldsymbol{\\mathrm{C}}$")
     
     numcol = 2 if len(inputs)==2 or len(inputs)==4 else 3
-    ax1.legend(labels=legend, bbox_to_anchor=(-0.1, -0.1), loc='upper center', ncol=numcol, 
-           frameon=False, columnspacing=5)
+    ax1.legend(labels=legend, bbox_to_anchor=(0.05, -0.18), loc='upper center', ncol=numcol, 
+           frameon=False, columnspacing=2)
     
     plt.subplots_adjust(hspace=.0)
-    
+
     plt.show()
