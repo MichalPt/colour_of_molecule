@@ -1,3 +1,22 @@
+class Absline:
+    def __init__(self, wavelength, strength, *orbitals):
+        self.wavelength = wavelength
+        self.f = strength
+        self.orbitals = list(orbitals)
+        
+def Homo_Lumo(HOMO,orbital_no):
+    if orbital_no<=HOMO:
+        output="HOMO"
+        d = int(orbital_no) - int(HOMO)
+    else:
+        output="LUMO"
+        d = int(orbital_no) - int(HOMO) - 1
+    if d>0:
+        output+="+"+str(d)
+    elif d<0:
+        output+=str(d)
+    return output
+
 def Gauss_log_to_abslines(log_file, title={},show_abs_lines_data=False,show_par=True, wav_shift=0.0):
     import re
     import os
@@ -13,6 +32,9 @@ def Gauss_log_to_abslines(log_file, title={},show_abs_lines_data=False,show_par=
     wav = list()
     
     parameters = list()
+    electrons = list()
+    orbitals = list()
+    all_orbitals = list()
 
     reg_exc = re.compile("Excited State")
     reg_wav = re.compile("\s[\d.]*\snm")
@@ -20,12 +42,37 @@ def Gauss_log_to_abslines(log_file, title={},show_abs_lines_data=False,show_par=
     reg_par = re.compile("^(\s?#)p\s")
     reg_line = re.compile("^(\s?-)-*")
     reg_charge = re.compile("^\s?Charge.*\sMultiplicity")
+    reg_MOs = re.compile("\d+\s[(alpha)(beta)]+\selectrons")
+    reg_num = re.compile("[\d.]+")
     
     ki=0
+    ori=0
     for x in file:
         #print(x)
-        if reg_exc.search(x) != None:
+        
+        if reg_MOs.search(x) != None:
+            electrons = reg_num.findall(x)
+            if electrons[0]==electrons[1]:
+                print("It's a singlet.")
+            elif abs(electrons[0]-electrons[1])==2:
+                print("It's a triplet.")
+            HOMO=max(electrons)
+            #print(HOMO)
+        
+        if ori==1:
+            if len(reg_num.findall(x))==3:
+                orb_nos = reg_num.findall(x)[:2]
+                orbitals.append(list(map(lambda z: Homo_Lumo(HOMO,z),orb_nos)))
+            else:
+                all_orbitals.append(orbitals)
+                orbitals=[]
+                #print(all_orbitals,"\n")
+                ori=0
+            
+        if reg_exc.search(x) != None and ori==0:
             list_file.append(x)
+            ori=1
+        
         if ki==1:
             if reg_line.search(x) == None:
                 parameters.append(x)
@@ -36,12 +83,15 @@ def Gauss_log_to_abslines(log_file, title={},show_abs_lines_data=False,show_par=
             ki = 1
         if reg_charge.search(x) != None:
             ch_mult = x[1:]
+        if reg_MOs.search(x) != None:
+            reg_num.findall(x)
     file.close()
     
     header=""
     for q in parameters:
         header = header + q[1:len(q)-1]
     
+    print(ch_mult)
     if show_par:
         print("Parameters:\n  ",header,"\n  ",ch_mult)
 
@@ -58,19 +108,22 @@ def Gauss_log_to_abslines(log_file, title={},show_abs_lines_data=False,show_par=
         if wav_shift!=0: 
             print("Shift applied to wavelengths:\n  ",wav_shift," nm")
         print("Wavelenths:\n  ",wav)
-        print("f:\n  ",fs)
+        print("f:\n  ",fs) 
     
-    output = (title,wav,fs)
-    
+    output0 = list(map(lambda i,j,k: Absline(i,j,k), wav,fs,all_orbitals ))
+    output = (title, output0)
+        
     return output
 
 
-def abslines_to_molar_abs(input, show_plot=False, stdev=3099.6, wav_range=(200,1000)):
+def abslines_to_molar_abs(inputf, show_plot=False, stdev=3099.6, wav_range=(200,1000)):
     import numpy as np
     import matplotlib.pyplot as plt
     import colour
     
-    title,wav,fs = input
+    title, abslines = inputf
+    wav = list(map(lambda k: k.wavelength, abslines))
+    fs = list(map(lambda l: l.f, abslines))
     
     start=wav_range[0]
     finish=wav_range[1]
@@ -160,7 +213,7 @@ def txt_spectrum_to_abs(text_file,title={},wav_range=(200,1000),from_Gaussian=Fa
     except:
         print("Error while creating SD. Imported data might not be well formated or ordered.")
     data = data0.interpolate(colour.SpectralShape(np.floor(wav_range[0]),np.floor(wav_range[1]),1))
-    #print(data)
+
     return data
 
 
@@ -185,7 +238,7 @@ def molar_abs_to_complement_abs(spectrum,OD=0.15,renormalize=True):
         export.append(exval)
         #print((wav[j],val[j],exval))
     out = colour.SpectralDistribution(data=export,domain=wav,name=tit)
-    #print(out)
+
     return out
 
 
@@ -221,7 +274,8 @@ def find_colour(spectrum, col_map_f='CIE 1931 2 Degree Standard Observer'):
 def spectrum_colour_analysis(file,title={}, stdev = 3096.01,renormalize = True,OD = 0.15, show_plot = False,
                          col_map_f="CIE 1931 2 Degree Standard Observer", wav_range=(200,1000), fancy_cols=True,
                          show_abs_lines_data=False, show_par=True, from_Gaussian=False, header=True, 
-                         col_wav=1, col_val=2, show_abs_data=False, give_raw_data=True, wav_shift=0.0):
+                         col_wav=1, col_val=2, show_abs_data=False, give_raw_data=True, wav_shift=0.0,
+                         abslines=False):
     # available kwargs:
     #    title                   - set the title for the spectrum (imported file name is set by default)
     #    wav_range = (min,max)   - set the limit wavelength to be plotted
@@ -239,6 +293,7 @@ def spectrum_colour_analysis(file,title={}, stdev = 3096.01,renormalize = True,O
     #    col_val = 2             - index (1,2,...) of column with abs. spectrum data in imported .txt file
     #    give_raw_data = True    - return raw data (colour.SpectralDistribution) and rgb code as [sd1,sd2,RGB]
     #    wav_shift = 0           - artificially move with the calculated spectral values along the wavelengths to see a colour change
+    #    abslines = False        - produce another plot with absorption lines from .log file 
     
     
     import colour
@@ -251,8 +306,6 @@ def spectrum_colour_analysis(file,title={}, stdev = 3096.01,renormalize = True,O
     from colour.plotting import (XYZ_to_plotting_colourspace,  filter_cmfs, CONSTANTS_COLOUR_STYLE )
     from colour.colorimetry import (CCS_ILLUMINANTS, wavelength_to_XYZ)
     from colour.utilities import (first_item, normalise_maximum)
-    
-    ###
     import re
     import os
     
@@ -312,8 +365,6 @@ def spectrum_colour_analysis(file,title={}, stdev = 3096.01,renormalize = True,O
         if fancy_cols==True:
             cmfs = first_item(filter_cmfs(col_map_f).values())
             wlen_cmfs = [n for n in wavelengths if n > cmfs.shape.start and n < cmfs.shape.end]
-
-            #global clr
             clr = XYZ_to_plotting_colourspace(
                 wavelength_to_XYZ(wlen_cmfs, cmfs),
                 CCS_ILLUMINANTS['CIE 1931 2 Degree Standard Observer']['E'],
@@ -351,10 +402,12 @@ def spectrum_colour_analysis(file,title={}, stdev = 3096.01,renormalize = True,O
     
     plt.show()
     
+    if abslines:
+        plot_abslines(lines[1],spec1,wav_range)
+    
     if give_raw_data:
         return output
 
-    
 def plot_multiple(*inputs,wav_range=(300,1000),plot_kwargs={'linewidth':1},plot_kwargs_of_nth={}):
     import colour
     import numpy as np
@@ -370,7 +423,7 @@ def plot_multiple(*inputs,wav_range=(300,1000),plot_kwargs={'linewidth':1},plot_
     warnings.filterwarnings("ignore",category=matplotlib.cbook.mplDeprecation)
     #
     
-    fig = plt.figure(figsize=(11,4), dpi=400, facecolor='w', edgecolor='k')
+    fig = plt.figure(figsize=(11,4), dpi=300, facecolor='w', edgecolor='k')
     gs0 = fig.add_gridspec(nrows=1, ncols=3, width_ratios=[6,6,1])    #, height_ratios=[1/len(inputs)]*len(inputs))
     
     gs00 = gs0[2].subgridspec(nrows=len(inputs), ncols=1,wspace=0.25)
@@ -420,11 +473,11 @@ def plot_multiple(*inputs,wav_range=(300,1000),plot_kwargs={'linewidth':1},plot_
         ax2[i].text(0.52, 0.5, f'$({i+1})$', va='center', ha='center')
     
     ax0.set_xlim(w_range)
-    ax0.set_ylim(0,1)
+    ax0.set_ylim(-0.02,1.02)
     ax0.set_yticks([0.0,0.5,1.0])
     ax0.set_xlabel(r'$\mathrm{vlnov\acute{a} \: d\acute{e}lka} \: \lambda \: [\mathrm{nm}]$')
     ax1.set_xlim(w_range)
-    ax1.set_ylim(0,1)
+    ax1.set_ylim(-0.02,1.02)
     ax1.set_yticks([0.0,0.5,1.0])
     ax1.set_xlabel(r'$\mathrm{vlnov\acute{a} \: d\acute{e}lka} \: \lambda \: [\mathrm{nm}]$')
     
@@ -438,4 +491,45 @@ def plot_multiple(*inputs,wav_range=(300,1000),plot_kwargs={'linewidth':1},plot_
     
     plt.subplots_adjust(hspace=.0)
 
+    plt.show()
+
+    
+def plot_abslines(abslines, spectrum, wav_range):
+    from matplotlib import pyplot as plt
+    from matplotlib import rc
+    from matplotlib.pyplot import figure
+
+    rc('font',**{'size': 13})
+    rc('text', usetex=True)
+    rc('text.latex', preamble=r'\usepackage{amsmath} \usepackage{mhchem, physics} \usepackage[utf8]{inputenc} \usepackage{textcomp}' )
+
+    plt.rcParams['xtick.bottom'] = plt.rcParams['xtick.labelbottom'] = True
+    plt.rcParams['xtick.top'] = plt.rcParams['xtick.labeltop'] = False
+    
+    plt.clf()
+    fig2 = plt.figure(num=None, figsize=(10, 5), dpi=300, facecolor='w', edgecolor='k')
+    axis1 = plt.subplot()
+    axis2 = plt.subplot()
+    axis2 = axis1.twinx()
+    
+    axis1.locator_params(axis='y', nbins=5)
+    axis1.ticklabel_format(axis="y",style="sci",scilimits=(-1,1))
+    
+    axis1.plot(spectrum.wavelengths, spectrum.values, color='black', alpha=0.3, linewidth=0.6)
+    axis1.set_xlim(wav_range)
+    axis2.set_xlim(wav_range)
+    
+    for ab in abslines:
+        text_label="\parbox{55mm}{"
+        for a,b in ab.orbitals[0]:
+            text_label+="$\mathrm{"+a+"}\\longrightarrow\mathrm{"+b+"}$ \\\\"
+        text_label = text_label[:-2]+"}"
+        axis2.plot([ab.wavelength,ab.wavelength],[0,ab.f], label=text_label, linewidth=2)
+    
+    axis1.set_ylabel(r'$ \epsilon \: [\mathrm{dm}^3 \cdot \mathrm{mol}^{-1} \cdot \mathrm{cm}^{-1}]$')
+    axis1.set_xlabel(r'$\mathrm{vlnov\acute{a} \: d\acute{e}lka} \: \lambda \: [\mathrm{nm}]$')
+    axis2.set_ylabel(r'$\mathrm{s\acute{i}la \: oscil\acute{a}toru} \: f$')
+
+    axis2.legend(bbox_to_anchor=(0.5, -0.18), loc='upper center', ncol=3, 
+           frameon=False, columnspacing=2, labelspacing=1.5)
     plt.show()
