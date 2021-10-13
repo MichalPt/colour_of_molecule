@@ -79,7 +79,7 @@ If you wish to install a specific version, the command might look like this:
 
 .. code-block:: console
 
- pip install colour-of-molecule=0.0.2.dev3
+ pip install colour-of-molecule==0.0.2.dev3
  
 ++++++++++++++
 Uninstallation
