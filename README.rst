@@ -4,13 +4,13 @@ Documentation
 
 .. contents:: Contents:
 
-===========
+============
 Installation
-===========
+============
 
-+++++++++
+++++++++++++++
 Prerequisities
-+++++++++
+++++++++++++++
 
 To be able to install and use the package ``colour_of_molecule``, Python language (version >= 3.6) needs to be installed on your computer.
 
@@ -35,9 +35,9 @@ It can be installed by the following command:
 
  python -m install pip
 
-+++++++++++++++
+++++++++++++++++++++
 Package installation
-+++++++++++++++
+++++++++++++++++++++
 
 The package, along with all necessary dependencies, can be installed by the following command:
 
@@ -59,12 +59,44 @@ and then trying to import the package:
 
 You can again leave the Python console by calling ``quit()`` if no error has occurred.
 
-=======
+++++++++++++++++++++
+Updating the package
+++++++++++++++++++++
+
+You can upgrade the package to the current version by:
+
+.. code-block:: console
+ 
+ pip install colour-of-molecule --upgrade
+ 
+or alternatively by a shorter command:
+
+.. code-block:: console
+
+ pip install colour-of-molecule -U
+ 
+If you wish to install a specific version, the command might look like this:
+
+.. code-block:: console
+
+ pip install colour-of-molecule==0.0.2.dev3
+ 
+++++++++++++++
+Uninstallation
+++++++++++++++
+
+The package can be completely removed from your machine by following command:
+
+.. code-block:: console
+
+ pip uninstall colour-of-molecule
+
+=====
 Usage
-=======
-+++++++++++++
+=====
+++++++++++++++++++++++++++
 Importing template scripts
-+++++++++++++
+++++++++++++++++++++++++++
 
 The package contains several preset template scripts which can be copied to current folder at any time by following commands.
 
@@ -104,9 +136,9 @@ Follow the instructions and select the desired .py script by using arrows and en
 
 The saving process contains failsafe against possible file overwrite. You will be asked to enter a new script filename or to confirm the ovewrite if any filename collision was found.
 
-+++++++++++++++++++++++
++++++++++++++++++++++++++++++++++++++++++++++
 Alternative way of importing template scripts
-+++++++++++++++++++++++
++++++++++++++++++++++++++++++++++++++++++++++
 
 If your console doesn't support interactive prompt provided by ``InquirerPy`` Python package (section `Importing template scripts`_), an alternative menu might be displayed:
 
@@ -129,9 +161,9 @@ Follow the listed instructions and create the desired script by calling, for exa
 
  colour_of_molecule.templates.create(1)
 
-+++++++++++++++++++++++++
+++++++++++++++++++++++++++++++++++++++++++++++
 Archive a new script inside the package folder
-+++++++++++++++++++++++++
+++++++++++++++++++++++++++++++++++++++++++++++
 
 If you want to make your script easily accessible by the template script importing mechanism listed above, you can archive your own custom script inside the package folder along with the template ones. Please **keep in mind that the** ``colour_of_molecule`` **package update might remove or overwrite these custom scripts** so please store them somewhere else as well to keep them safe in longterm perspective.
 
@@ -143,15 +175,15 @@ To add the custom scipt to the templates folder, navigate to the folder your scr
 
 You will be asked to confirm the archiving or to enter a new filename if the current is already used in the templates folder.
 
-==================
+===========================
 Code structure and commands
-==================
+===========================
 
 All settings related to numerical parameters or analysis enters the process via the class ``File``. Setting related to fonts are managed by class ``FontSettings``.
 
-++++++++++++++
+++++++++++
 class File
-++++++++++++++
+++++++++++
 
 The first step every script has to contain is the command to load the input file. This is done by ``file_in()`` function directly accessible directly from the package directly. It takes a single argument - path to the input file. For example:
 
@@ -206,9 +238,9 @@ o ``.legend_title``
 
  e.g.: ``file.legend_title = ""`` (default value)
 
-+++++++
+++++++++++++++++++
 class FontSettings
-+++++++
+++++++++++++++++++
 
 All settings related to fonts used and displayed in the plots are managed by the ``FontSettings`` class. To begin with, the class needs to be imported:
 
@@ -248,9 +280,9 @@ The instance can be then passed to any of the plotting functions, for example:
 
  com.plot_single_spectrum(file, fonts=font_settings)
 
-+++++
+++++++++++++++++++
 Plotting functions
-+++++
+++++++++++++++++++
 
 There are currently three functions capable of returning an image of a plot:
 
@@ -269,7 +301,6 @@ o ``save``
 
 o ``fonts``
  ... already mentioned above
-
 
 
 
