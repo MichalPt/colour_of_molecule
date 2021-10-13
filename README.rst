@@ -165,15 +165,56 @@ Follow the listed instructions and create the desired script by calling, for exa
 Archive a new script inside the package folder
 ++++++++++++++++++++++++++++++++++++++++++++++
 
-If you want to make your script easily accessible by the template script importing mechanism listed above, you can archive your own custom script inside the package folder along with the template ones. Please **keep in mind that the** ``colour_of_molecule`` **package update might remove or overwrite these custom scripts** so please store them somewhere else as well to keep them safe in longterm perspective.
+If you want to make your script easily accessible by the template script importing mechanism listed above, you can archive your own custom script inside the package folder along with the template ones. Please **keep in mind that the** ``colour_of_molecule`` **package update might remove or overwrite these archived custom scripts** so please store them somewhere else as well to keep them safe in a longterm perspective.
 
-To add the custom scipt to the templates folder, navigate to the folder your script is currently stored. Then use the following command similar to the one normally used to run the script itself but with the ``--save`` keyword added to the command instead of the input file path. For example it might look like followlingly:
+The scripts can be distributed into "virtual" folders or categories that will be displayed during the script import process to keep it organized. The folder assignment is done in the first line of the script itself by a following text:
+
+.. code-block:: python
+
+ ### category: folder-name
+
+To add the custom scipt to the templates folder, within the package, navigate to the folder your custom script is currently stored. Then use the following command similar to the one normally used to run the script itself but with the ``--save`` keyword added to the command instead of the input file path. For example it might look like followlingly:
 
 .. code-block:: console
 
  python plot_spectrum2.py --save
 
 You will be asked to confirm the archiving or to enter a new filename if the current is already used in the templates folder.
+
++++++++++++++++++++
+Running the scripts
++++++++++++++++++++
+
+There are multiple ways how the scripts can be used. You can either specify the input file path in the script itself, for example into a variable called ``input_file``:
+
+.. code-block:: python
+
+ import colour_of_molecule as com      # importing the package
+ input_file = "C:/..."                 # specifying the input file path
+ file = com.file_in(input_file)        # loading the input file
+ 
+The script would be then run by a simple command:
+
+.. code-block:: console
+
+ python my_script.py
+ 
+Alternatively, you can also pass the input file path straight from the command line, for example:
+
+.. code-block:: console
+
+ python my_script.py ./gaussian/asp-B3LYP-pVDZ.log
+ 
+It's important to mention that this way of passing the input file path as an in-line argument is possible if and only if the script contains appropriate piece of code which enables it:
+
+.. code-block:: python
+
+ import sys                 # importing python built-in package
+ if len(sys.argv) > 1:      # checks the number of arguments passed to python (0 - script, 1 - input file path)
+     path = sys.argv[1]     # sets the variable path to the input file path (argument with index 1)
+ else:
+     path = input_file      # if only one argument was passed (i.e. only the script), use the in-file specified path (see the beginning of this docs section)
+ 
 
 ===========================
 Code structure and commands
