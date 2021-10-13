@@ -233,7 +233,7 @@ The first step every script has to contain is the command to load the input file
  import colour_of_molecule as com
  file = com.file_in(PATH)
 
-Currently, output formats of four QCh programs are supported: **Gaussian**, **ORCA**, **MNDO**, and **MOLPRO**. The format will recognised automatically during the loading process.
+Currently, output formats of four QCh programs are supported: **Gaussian**, **ORCA**, **MNDO**, and **MOLPRO**. The format will be recognised automatically during the loading process.
 
 Any settings are now passed to the ``file`` object (an instance of ``File`` class) as attributes: ``file.X`` where ``X`` can be:
 
