@@ -349,7 +349,9 @@ o ``save``
 o ``title``
  title of the plot displayed in its header
  
- e.g.: ``com.plot_single_spectrum(file, xaxis_label="oscillator strength")``
+ e.g.: ``com.plot_single_spectrum(file, title="oscillator strength")``
+ 
+ to hide the title use expression ``title=None`` (please note that in case of axis labels the preferred way is to use null string ``""`` instead)
 
 o ``xaxis_label``
  label for the x-axis displayed below the plot
@@ -415,7 +417,37 @@ o ``rainbow``
  
  e.g.: ``com.plot_single_spectrum(file, rainbow=True)`` (default value)
 
+===============
+Example outputs
+===============
 
++++++++++
+Example 1
++++++++++
 
+.. code-block:: python
+ 
+ file = com.file_in("C:/Users/xyz/carotenoid.out")
+ file.wavelength_range = (100, 1000)
+ com.plot_single_spectrum(file, save="C:/Users/xyz/exp1.png", dpi=200, size=(10, 3),
+                         title="Example1", xaxis_label="wavelength [nanometers]", yaxis_label="rel. abs.", 
+                         lines_show=False,
+                        )
 
+.. image:: https://github.com/MichalPt/colour_of_molecule/blob/0cb41064ebe726930d96e95534ecbac3a1b722fb/exp1.png
+
++++++++++
+Example 2
++++++++++
+
+.. code-block:: python
+ 
+ file = com.file_in("C:/Users/xyz/phenolphtalein.log")
+ file.wavelength_range = (200, 700)
+ com.plot_single_spectrum(file, save="C:/Users/xyz/exp2.png", dpi=200, size=(10, 3),
+                         title="Example2", xaxis_label="wavelength [nm]", yaxis_label="relative absorbance", 
+                         lines_show=True, lines_colours=True, lines_lim=0.001, lines_ratio=(12,2), lines_width=1.6,
+                        )
+
+.. image:: https://github.com/MichalPt/colour_of_molecule/blob/0cb41064ebe726930d96e95534ecbac3a1b722fb/exp1.png
 
