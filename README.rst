@@ -541,6 +541,5 @@ Example 2
                          lines_show=True, lines_colours=True, lines_lim=0.001, lines_ratio=(12,2), lines_width=1.8,
                         )
 
->>>>>>> c4d9de081a8e4d7a30188eb14b709f272084a8a6
 .. image:: https://github.com/MichalPt/colour_of_molecule/blob/6855ea3d8a149b7eb3b4c72048ecf5a42d50af85/exp1.png
 
