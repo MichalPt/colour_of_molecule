@@ -333,15 +333,87 @@ o ``plot_abs_lines()``
 
 o ``get_colour()``
 
-Each of these functions takes a single positional argument - an instance of class ``File`` - and up to two keyword arguments:
+Each of these functions takes a single positional argument - an instance of class ``File`` - and various keyword arguments.
+
+The keyword arguments can be categorised into two groups - **general** and **function-specific**.
+
+--------------------------
+General keyword arguments
+--------------------------
 
 o ``save``
  sets the path where to save the output image
 
  e.g.: ``com.plot_single_spectrum(file, save="C:/...")``
 
+o ``title``
+ title of the plot displayed in its header
+ 
+ e.g.: ``com.plot_single_spectrum(file, xaxis_label="oscillator strength")``
+
+o ``xaxis_label``
+ label for the x-axis displayed below the plot
+ 
+ e.g.: ``com.plot_single_spectrum(file, xaxis_label="wavelength [nm]")`` (default value)
+ 
+o ``yaxis_label``
+ label for the y-axis displayed on the left side of the plot
+ 
+ e.g.: ``com.plot_single_spectrum(file, yaxis_label="relative absorbance")``
+
+o ``yaxis_label_right``
+ label for the right y-axis displayed on the right side of the plot
+ 
+ e.g.: ``com.plot_single_spectrum(file, yaxis_label_right="oscillator strength")``
+
+o ``size``
+ tuple, diameters of the plot expressed by a tuple of values, i.e. ``(width, height)``
+ 
+ e.g.: ``com.plot_single_spectrum(file, size=(6,4), )``
+ 
+o ``dpi``
+ resolution of the generated image (dots per inch)
+ 
+ e.g.: ``com.plot_single_spectrum(file, dpi=400)`` (default value)
+ 
 o ``fonts``
  ... already mentioned above
+
+-----------------------------------
+Function-specific keyword arguments
+-----------------------------------
+
+**com.plot_single_spectrum()**:
+
+o ``lines_show``
+ boolean, True if absorption lines should be plotted below the spectrum, False if not
+ 
+ e.g.: ``com.plot_single_spectrum(file, lines_show=True)`` (default value)
+ 
+o ``lines_ratio``
+ tuple, sets the relative height of the main plot area (where spectrum is plotted) and the supportive stripe with positions of abs. lines
+ 
+ e.g.: ``com.plot_single_spectrum(file, lines_ratio=(14,1), )`` (default value)
+ 
+o ``lines_colours``
+ boolean, True if absorption lines with oscillator strength larger than ``lines_lim`` should be coloured according to their corresponding wavelength, otherwise they will be coloured black
+ 
+ e.g.: ``com.plot_single_spectrum(file, lines_colours=True)`` (default value)
+ 
+o ``lines_lim``
+ float, limiting value of oscillator strength separating so-called dark and bright transitions 
+ 
+ e.g.: ``com.plot_single_spectrum(file, lines_lim=0.0001)`` (default value)
+ 
+o ``lines_width``
+ float, width of plotted abs. lines in pts.
+ 
+ e.g.: ``com.plot_single_spectrum(file, lines_width=1.2)`` (default value)
+ 
+o ``rainbow``
+ boolean, True if a colour spectrum should be displayed below the line of plotted abs. spectrum line
+ 
+ e.g.: ``com.plot_single_spectrum(file, rainbow=True)`` (default value)
 
 
 
