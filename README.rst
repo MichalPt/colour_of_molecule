@@ -348,48 +348,33 @@ o ``save``
 
 o ``title``
  title of the plot displayed in its header
-<<<<<<< HEAD
 
- e.g.: ``com.plot_single_spectrum(file, title="oscillator strength")``
-
-=======
+ e.g.: ``com.plot_single_spectrum(file, title="Example1")``
  
- e.g.: ``com.plot_single_spectrum(file, title="oscillator strength")``
- 
->>>>>>> c4d9de081a8e4d7a30188eb14b709f272084a8a6
  to hide the title use expression ``title=None`` (please note that in case of axis labels the preferred way is to use null string ``""`` instead)
 
 o ``xaxis_label``
  label for the x-axis displayed below the plot
-<<<<<<< HEAD
 
  e.g.: ``com.plot_single_spectrum(file, xaxis_label="wavelength [nm]")`` (default value)
 
 o ``yaxis_label``
  label for the y-axis displayed on the left side of the plot
-
-=======
  
  e.g.: ``com.plot_single_spectrum(file, xaxis_label="wavelength [nm]")`` (default value)
  
 o ``yaxis_label``
  label for the y-axis displayed on the left side of the plot
  
->>>>>>> c4d9de081a8e4d7a30188eb14b709f272084a8a6
  e.g.: ``com.plot_single_spectrum(file, yaxis_label="relative absorbance")``
 
 o ``yaxis_label_right``
  label for the right y-axis displayed on the right side of the plot
-<<<<<<< HEAD
 
-=======
- 
->>>>>>> c4d9de081a8e4d7a30188eb14b709f272084a8a6
  e.g.: ``com.plot_single_spectrum(file, yaxis_label_right="oscillator strength")``
 
 o ``size``
  tuple, diameters of the plot expressed by a tuple of values, i.e. ``(width, height)``
-<<<<<<< HEAD
 
  e.g.: ``com.plot_single_spectrum(file, size=(6,4), )``
 
@@ -398,16 +383,6 @@ o ``dpi``
 
  e.g.: ``com.plot_single_spectrum(file, dpi=400)`` (default value)
 
-=======
- 
- e.g.: ``com.plot_single_spectrum(file, size=(6,4), )``
- 
-o ``dpi``
- resolution of the generated image (dots per inch)
- 
- e.g.: ``com.plot_single_spectrum(file, dpi=400)`` (default value)
- 
->>>>>>> c4d9de081a8e4d7a30188eb14b709f272084a8a6
 o ``fonts``
  ... already mentioned above
 
@@ -419,7 +394,6 @@ Function-specific keyword arguments
 
 o ``lines_show``
  boolean, True if absorption lines should be plotted below the spectrum, False if not
-<<<<<<< HEAD
 
  e.g.: ``com.plot_single_spectrum(file, lines_show=True)`` (default value)
 
@@ -467,66 +441,6 @@ Example 1
 
 .. image:: https://github.com/MichalPt/colour_of_molecule/blob/6855ea3d8a149b7eb3b4c72048ecf5a42d50af85/exp1_0.png
 
-+++++++++
-Example 2
-+++++++++
-
-.. code-block:: python
-
- file = com.file_in("C:/Users/xyz/phenolphtalein.log")
- file.wavelength_range = (200, 700)
- com.plot_single_spectrum(file, save="C:/Users/xyz/exp2.png", dpi=200, size=(10, 3),
-                         title=None, xaxis_label="wavelength [nm]", yaxis_label="relative absorbance",
-                         lines_show=True, lines_colours=True, lines_lim=0.001, lines_ratio=(12,2), lines_width=1.8,
-                        )
-
-=======
- 
- e.g.: ``com.plot_single_spectrum(file, lines_show=True)`` (default value)
- 
-o ``lines_ratio``
- tuple, sets the relative height of the main plot area (where spectrum is plotted) and the supportive stripe with positions of abs. lines
- 
- e.g.: ``com.plot_single_spectrum(file, lines_ratio=(14,1), )`` (default value)
- 
-o ``lines_colours``
- boolean, True if absorption lines with oscillator strength larger than ``lines_lim`` should be coloured according to their corresponding wavelength, otherwise they will be coloured black
- 
- e.g.: ``com.plot_single_spectrum(file, lines_colours=True)`` (default value)
- 
-o ``lines_lim``
- float, limiting value of oscillator strength separating so-called dark and bright transitions 
- 
- e.g.: ``com.plot_single_spectrum(file, lines_lim=0.0001)`` (default value)
- 
-o ``lines_width``
- float, width of plotted abs. lines in pts.
- 
- e.g.: ``com.plot_single_spectrum(file, lines_width=1.2)`` (default value)
- 
-o ``rainbow``
- boolean, True if a colour spectrum should be displayed below the line of plotted abs. spectrum line
- 
- e.g.: ``com.plot_single_spectrum(file, rainbow=True)`` (default value)
-
-===============
-Example outputs
-===============
-
-+++++++++
-Example 1
-+++++++++
-
-.. code-block:: python
- 
- file = com.file_in("C:/Users/xyz/carotenoid.out")
- file.wavelength_range = (100, 1000)
- com.plot_single_spectrum(file, save="C:/Users/xyz/exp1.png", dpi=200, size=(10, 3),
-                         title="Example1", xaxis_label="wavelength [nanometers]", yaxis_label="rel. abs.", 
-                         lines_show=False,
-                        )
-
-.. image:: https://github.com/MichalPt/colour_of_molecule/blob/6855ea3d8a149b7eb3b4c72048ecf5a42d50af85/exp1_0.png
 
 +++++++++
 Example 2
