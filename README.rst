@@ -434,7 +434,7 @@ Example 1
                          lines_show=False,
                         )
 
-.. image:: https://github.com/MichalPt/colour_of_molecule/blob/0cb41064ebe726930d96e95534ecbac3a1b722fb/exp1.png
+.. image:: https://github.com/MichalPt/colour_of_molecule/blob/6855ea3d8a149b7eb3b4c72048ecf5a42d50af85/exp1_0.png
 
 +++++++++
 Example 2
@@ -449,5 +449,5 @@ Example 2
                          lines_show=True, lines_colours=True, lines_lim=0.001, lines_ratio=(12,2), lines_width=1.6,
                         )
 
-.. image:: https://github.com/MichalPt/colour_of_molecule/blob/0cb41064ebe726930d96e95534ecbac3a1b722fb/exp1.png
+.. image:: https://github.com/MichalPt/colour_of_molecule/blob/6855ea3d8a149b7eb3b4c72048ecf5a42d50af85/exp1.png
 
