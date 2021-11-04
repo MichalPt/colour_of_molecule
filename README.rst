@@ -435,7 +435,7 @@ Example 1
  file = com.file_in("C:/Users/xyz/carotenoid.out")
  file.wavelength_range = (100, 1000)
  com.plot_single_spectrum(file, save="C:/Users/xyz/exp1.png", dpi=200, size=(10, 3),
-                         title="Example1", xaxis_label="wavelength [nanometers]", yaxis_label="rel. abs.",
+                         title="Carotenoid", xaxis_label="wavelength [nm]", yaxis_label="relative absorbance",
                          lines_show=False,
                         )
 
@@ -451,7 +451,7 @@ Example 2
  file = com.file_in("C:/Users/xyz/phenolphtalein.log")
  file.wavelength_range = (200, 700)
  com.plot_single_spectrum(file, save="C:/Users/xyz/exp2.png", dpi=200, size=(10, 3),
-                         title=None, xaxis_label="wavelength [nm]", yaxis_label="relative absorbance", 
+                         title=None, xaxis_label="wavelength [nanometers]", yaxis_label="rel. abs.", 
                          lines_show=True, lines_colours=True, lines_lim=0.001, lines_ratio=(12,2), lines_width=1.8,
                         )
 
