@@ -95,3 +95,20 @@ def find_colour(spectrum, col_map_f='CIE 1931 2 Degree Standard Observer'):
     return RGB
 
 
+def find_colour_single(wl):
+    import colour
+    from colour.colorimetry import wavelength_to_XYZ
+
+    if wl < 360 or wl > 830:
+        RGB = (0, 0, 0)
+    else:
+        XYZ = wavelength_to_XYZ(wl)
+        RGB = colour.XYZ_to_sRGB(XYZ)
+        for i in range(0, 3, 1):
+            if RGB[i] < 0:
+                RGB[i] = 0
+            if RGB[i] > 1:
+                RGB[i] = 1
+    return (RGB)
+
+

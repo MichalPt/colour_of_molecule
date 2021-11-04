@@ -66,21 +66,21 @@ Updating the package
 You can upgrade the package to the current version by:
 
 .. code-block:: console
- 
+
  pip install colour-of-molecule --upgrade
- 
+
 or alternatively by a shorter command:
 
 .. code-block:: console
 
  pip install colour-of-molecule -U
- 
+
 If you wish to install a specific version, the command might look like this:
 
 .. code-block:: console
 
  pip install colour-of-molecule==0.0.2.dev3
- 
+
 ++++++++++++++
 Uninstallation
 ++++++++++++++
@@ -192,19 +192,19 @@ There are multiple ways how the scripts can be used. You can either specify the 
  import colour_of_molecule as com      # importing the package
  input_file = "C:/..."                 # specifying the input file path
  file = com.file_in(input_file)        # loading the input file
- 
+
 The script would be then run by a simple command:
 
 .. code-block:: console
 
  python my_script.py
- 
+
 Alternatively, you can also pass the input file path straight from the command line, for example:
 
 .. code-block:: console
 
  python my_script.py ./gaussian/asp-B3LYP-pVDZ.log
- 
+
 It's important to mention that this way of passing the input file path as an in-line argument is possible if and only if the script contains appropriate piece of code which enables it:
 
 .. code-block:: python
@@ -214,7 +214,7 @@ It's important to mention that this way of passing the input file path as an in-
      path = sys.argv[1]     # sets the variable path to the input file path (argument with index 1)
  else:
      path = input_file      # if only one argument was passed (i.e. only the script), use the in-file specified path (see the beginning of this docs section)
- 
+
 
 ===========================
 Code structure and commands
@@ -333,17 +333,121 @@ o ``plot_abs_lines()``
 
 o ``get_colour()``
 
-Each of these functions takes a single positional argument - an instance of class ``File`` - and up to two keyword arguments:
+Each of these functions takes a single positional argument - an instance of class ``File`` - and various keyword arguments.
+
+The keyword arguments can be categorised into two groups - **general** and **function-specific**.
+
+--------------------------
+General keyword arguments
+--------------------------
 
 o ``save``
  sets the path where to save the output image
 
  e.g.: ``com.plot_single_spectrum(file, save="C:/...")``
 
+o ``title``
+ title of the plot displayed in its header
+
+ e.g.: ``com.plot_single_spectrum(file, title="oscillator strength")``
+
+ to hide the title use expression ``title=None`` (please note that in case of axis labels the preferred way is to use null string ``""`` instead)
+
+o ``xaxis_label``
+ label for the x-axis displayed below the plot
+
+ e.g.: ``com.plot_single_spectrum(file, xaxis_label="wavelength [nm]")`` (default value)
+
+o ``yaxis_label``
+ label for the y-axis displayed on the left side of the plot
+
+ e.g.: ``com.plot_single_spectrum(file, yaxis_label="relative absorbance")``
+
+o ``yaxis_label_right``
+ label for the right y-axis displayed on the right side of the plot
+
+ e.g.: ``com.plot_single_spectrum(file, yaxis_label_right="oscillator strength")``
+
+o ``size``
+ tuple, diameters of the plot expressed by a tuple of values, i.e. ``(width, height)``
+
+ e.g.: ``com.plot_single_spectrum(file, size=(6,4), )``
+
+o ``dpi``
+ resolution of the generated image (dots per inch)
+
+ e.g.: ``com.plot_single_spectrum(file, dpi=400)`` (default value)
+
 o ``fonts``
  ... already mentioned above
 
+-----------------------------------
+Function-specific keyword arguments
+-----------------------------------
 
+**com.plot_single_spectrum()**:
 
+o ``lines_show``
+ boolean, True if absorption lines should be plotted below the spectrum, False if not
 
+ e.g.: ``com.plot_single_spectrum(file, lines_show=True)`` (default value)
+
+o ``lines_ratio``
+ tuple, sets the relative height of the main plot area (where spectrum is plotted) and the supportive stripe with positions of abs. lines
+
+ e.g.: ``com.plot_single_spectrum(file, lines_ratio=(14,1), )`` (default value)
+
+o ``lines_colours``
+ boolean, True if absorption lines with oscillator strength larger than ``lines_lim`` should be coloured according to their corresponding wavelength, otherwise they will be coloured black
+
+ e.g.: ``com.plot_single_spectrum(file, lines_colours=True)`` (default value)
+
+o ``lines_lim``
+ float, limiting value of oscillator strength separating so-called dark and bright transitions
+
+ e.g.: ``com.plot_single_spectrum(file, lines_lim=0.0001)`` (default value)
+
+o ``lines_width``
+ float, width of plotted abs. lines in pts.
+
+ e.g.: ``com.plot_single_spectrum(file, lines_width=1.2)`` (default value)
+
+o ``rainbow``
+ boolean, True if a colour spectrum should be displayed below the line of plotted abs. spectrum line
+
+ e.g.: ``com.plot_single_spectrum(file, rainbow=True)`` (default value)
+
+===============
+Example outputs
+===============
+
++++++++++
+Example 1
++++++++++
+
+.. code-block:: python
+
+ file = com.file_in("C:/Users/xyz/carotenoid.out")
+ file.wavelength_range = (100, 1000)
+ com.plot_single_spectrum(file, save="C:/Users/xyz/exp1.png", dpi=200, size=(10, 3),
+                         title="Example1", xaxis_label="wavelength [nanometers]", yaxis_label="rel. abs.",
+                         lines_show=False,
+                        )
+
+.. image:: https://github.com/MichalPt/colour_of_molecule/blob/6855ea3d8a149b7eb3b4c72048ecf5a42d50af85/exp1_0.png
+
++++++++++
+Example 2
++++++++++
+
+.. code-block:: python
+
+ file = com.file_in("C:/Users/xyz/phenolphtalein.log")
+ file.wavelength_range = (200, 700)
+ com.plot_single_spectrum(file, save="C:/Users/xyz/exp2.png", dpi=200, size=(10, 3),
+                         title=None, xaxis_label="wavelength [nm]", yaxis_label="relative absorbance",
+                         lines_show=True, lines_colours=True, lines_lim=0.001, lines_ratio=(12,2), lines_width=1.8,
+                        )
+
+.. image:: https://github.com/MichalPt/colour_of_molecule/blob/6855ea3d8a149b7eb3b4c72048ecf5a42d50af85/exp1.png
 

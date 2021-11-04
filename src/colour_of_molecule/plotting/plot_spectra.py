@@ -1,14 +1,21 @@
 from ..classes.classes import FontSettings
+import numpy as np
 
 def plot_single_spectrum(file, save="", size=(6,3), dpi=400, rainbow=True,
-                         header = True, wav_shift = 0.0, fonts=FontSettings()):
+                         title="", fonts=FontSettings(),
+                         xaxis_label="wavelength [nm]", yaxis_label="relative absorbance",
+                         lines_show=True, lines_ratio=(14, 1), lines_colours=True, lines_width=1.2, lines_lim=0.0001):
     from matplotlib import rcParams
     from matplotlib import pyplot as plt
     from colour_of_molecule.classes.classes import File
+    from colour_of_molecule.analysis.spectrum import find_colour_single
 
     #sanity check:
     if not isinstance(file, File):
         raise Exception("ERROR:\tUnrecognized input. First argument has to be derived from class \"File\".")
+
+    if title != "":
+        file.plot_title = title
 
     wavelengths = file.molar_abs_spectrum.wavelengths
     values = file.molar_abs_spectrum.values
@@ -17,22 +24,47 @@ def plot_single_spectrum(file, save="", size=(6,3), dpi=400, rainbow=True,
     rcParams['font.size'] = fonts.sizedict['all']
     rcParams['font.family'] = fonts.fontdict['all']
 
-    fig, axes = plt.subplots(num=None, figsize=size, dpi=dpi, facecolor='w', edgecolor='k')
+    nrows = 1 if lines_show is False else 2
+    gskw = dict(dict(height_ratios=list(lines_ratio), hspace=0.0)) if lines_show is True else None
+    fig, ax = plt.subplots(nrows=nrows, figsize=size, dpi=dpi, facecolor='w', edgecolor='k',
+                           gridspec_kw=gskw, sharex=True)
 
-    axes.set_xlabel("vlnová délka [nm]")
-    axes.set_xlim(*wav_range)
-    axes.set_ylabel("relativní absorbance [nm]")
-    axes.set_ylim(0, max(values))
-    axes.ticklabel_format(axis="y", style="sci", scilimits=(-1, 1))
-    plt.locator_params(axis='y', nbins=5)
+    boo = type(ax) == np.ndarray
+    ax0 = ax[0] if boo is True else ax
+    ax1 = ax[1] if boo is True else ax
 
-    plt.plot(wavelengths, values, linewidth=1.2, color='k')
+    ax1.set_xlabel(xaxis_label)
+    ax1.set_xlim(*wav_range)
+    ax0.set_ylabel(yaxis_label)
+    ax0.set_ylim(0, max(values))
+    ax0.ticklabel_format(axis="y", style="sci", scilimits=(-1, 1))
+    ax0.locator_params(axis='y', nbins=5)
+
+    ax0.plot(wavelengths, values, linewidth=1.2, color='k')
+
+    if lines_show is True:
+        abslines = file.abs_lines
+        for absline in abslines:
+            wv = absline.wavelength
+            if lines_colours is False:
+                col = 'k'
+            else:
+                if absline.oscillator_strength > lines_lim:
+                    col = find_colour_single(wv)
+                else:
+                    col = 'k'
+            ax1.plot([wv, wv],[0, 1], color=col, linewidth=lines_width)
+        plt.setp(ax1.get_yticklabels(), visible=False)
+        plt.setp(ax1.get_yticklines(), visible=False)
 
     if rainbow is True:
-        add_rainbow(axes, wavelengths, values)
+        add_rainbow(ax0, wavelengths, values)
 
-    for label in [*axes.get_xticklabels(), *axes.get_yticklabels()]:
+    for label in [*ax1.get_xticklabels(), *ax0.get_yticklabels()]:
         label.set_fontproperties(fonts.fonts['axis_tick_labels'])
+
+    plot_title = file.plot_title if file.plot_title != "" else "File: {0}".format(file.filename)
+    ax0.set_title(plot_title)
 
     plt.tight_layout()
 
@@ -53,7 +85,6 @@ def add_rainbow(axis, wavelengths, values, opacity=100):
     if not hasattr(axis, 'plot') and not hasattr(axis, 'add_patch'):
         raise Exception("ERROR:\tFirst argument needs to have method \"plot\".")
 
-    import numpy as np
     from colour.plotting import XYZ_to_plotting_colourspace, filter_cmfs, CONSTANTS_COLOUR_STYLE
     from colour.colorimetry import CCS_ILLUMINANTS, wavelength_to_XYZ
     from colour.utilities import first_item, normalise_maximum
@@ -138,7 +169,9 @@ def create_label(list1, list2):
     return lines
 
 
-def plot_abs_lines(file, save="", size=(7,7), dpi=200, fonts=FontSettings()):
+def plot_abs_lines(file, save="", size=(7,7), dpi=200, fonts=FontSettings(),
+                   title="",
+                   xaxis_label="wavelength [nm]", yaxis_label="$\epsilon$", yaxis_label_right="oscillator strength"):
     from colour_of_molecule.classes.classes import File
     from matplotlib import pyplot as plt
     from matplotlib import rcParams
@@ -152,8 +185,9 @@ def plot_abs_lines(file, save="", size=(7,7), dpi=200, fonts=FontSettings()):
     # sanity check:
     if not isinstance(file, File):
         raise Exception("ERROR:\tFunction argument has to be of \"File\" class.")
-    # if not hasattr(file, "abs_lines"):
-    #     raise Exception("ERROR:\tFunction argument doesn't seem to have \"abs_lines\" attribute.")
+
+    if title != "":
+        file.plot_title = title
 
     ab_spectrum = file.molar_abs_spectrum
     wavelengths = ab_spectrum.wavelengths
@@ -174,7 +208,6 @@ def plot_abs_lines(file, save="", size=(7,7), dpi=200, fonts=FontSettings()):
     def check_transition_amplitudes(absl):
         ls = [ab[2] for ab in absl if len(ab) >= 3]
         maximal = max(ls) if len(ls) > 0 else None
-        #print("   LS: ", ls, maximal)
         return maximal
 
     for ab in abs_lines:
@@ -202,15 +235,15 @@ def plot_abs_lines(file, save="", size=(7,7), dpi=200, fonts=FontSettings()):
         if ab.wavelength > wav_range[0] and ab.wavelength < wav_range[1]:
             axis2.plot([ab.wavelength, ab.wavelength], [0, ab.oscillator_strength], label=text_label, linewidth=2)
 
-    axis1.set_ylabel("$\epsilon$")
-    axis1.set_xlabel("wavelength [nm]")
-    axis2.set_ylabel("oscillator strength")
+    axis1.set_ylabel(yaxis_label)
+    axis1.set_xlabel(xaxis_label)
+    axis2.set_ylabel(yaxis_label_right)
 
     for ax in [axis1, axis2]:
         for label in [*ax.get_xticklabels(), *ax.get_yticklabels()]:
             label.set_fontproperties(fonts.fonts['axis_tick_labels'])
 
-    plot_title = file.plot_title if file.plot_title != "" else "File: \"{0}\"".format(file.filename)
+    plot_title = file.plot_title if file.plot_title == "" else "File: {0}".format(file.filename)
     legend_title = file.legend_title if file.legend_title != "" \
         else "Electron transitions with amplitude greater than {:.2f} contributing to absorption lines:".format(file.transition_minimal_amplitude)
 
@@ -233,7 +266,7 @@ def plot_abs_lines(file, save="", size=(7,7), dpi=200, fonts=FontSettings()):
 
 
 def get_colour(file, save="", size=(3,3), dpi=200, fonts=FontSettings(), title="RGB: {RGB}",
-               col_map_f='CIE 1931 2 Degree Standard Observer', OD=0.15, normalize=True):
+               col_map_f='CIE 1931 2 Degree Standard Observer'):
     from colour_of_molecule.analysis.spectrum import find_colour, molar_abs_to_complement_abs
     from matplotlib import rcParams
     from matplotlib import pyplot as plt
@@ -242,6 +275,9 @@ def get_colour(file, save="", size=(3,3), dpi=200, fonts=FontSettings(), title="
     # sanity check:
     if not isinstance(file, File):
         raise Exception("ERROR:\tUnrecognized input. First argument has to be derived from class \"File\".")
+
+    if title != "":
+        file.plot_title = title
 
     RGB = find_colour(file.complementary_abs_spectrum, col_map_f)
 
