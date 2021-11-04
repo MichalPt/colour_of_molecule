@@ -445,8 +445,8 @@ Example 2
  file = com.file_in("C:/Users/xyz/phenolphtalein.log")
  file.wavelength_range = (200, 700)
  com.plot_single_spectrum(file, save="C:/Users/xyz/exp2.png", dpi=200, size=(10, 3),
-                         title="Example2", xaxis_label="wavelength [nm]", yaxis_label="relative absorbance", 
-                         lines_show=True, lines_colours=True, lines_lim=0.001, lines_ratio=(12,2), lines_width=1.6,
+                         title=None, xaxis_label="wavelength [nm]", yaxis_label="relative absorbance", 
+                         lines_show=True, lines_colours=True, lines_lim=0.001, lines_ratio=(12,2), lines_width=1.8,
                         )
 
 .. image:: https://github.com/MichalPt/colour_of_molecule/blob/6855ea3d8a149b7eb3b4c72048ecf5a42d50af85/exp1.png
