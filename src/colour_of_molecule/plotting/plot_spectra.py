@@ -4,7 +4,8 @@ import numpy as np
 def plot_single_spectrum(file, save="", size=(6,3), dpi=400, rainbow=True,
                          title="", fonts=FontSettings(),
                          xaxis_label="wavelength [nm]", yaxis_label="relative absorbance",
-                         lines_show=True, lines_ratio=(14, 1), lines_colours=True, lines_width=1.2, lines_lim=0.0001):
+                         lines_show=True, lines_ratio=(14, 1), lines_colours=True, 
+                         lines_width=1.2, lines_lim=0.0001):
     from matplotlib import rcParams
     from matplotlib import pyplot as plt
     from colour_of_molecule.classes.classes import File
@@ -87,7 +88,8 @@ def add_rainbow(axis, wavelengths, values, opacity=100):
 
     from colour.plotting import XYZ_to_plotting_colourspace, filter_cmfs, CONSTANTS_COLOUR_STYLE
     from colour.colorimetry import CCS_ILLUMINANTS, wavelength_to_XYZ
-    from colour.utilities import first_item, normalise_maximum
+    from colour.utilities import first_item
+    from colour.algebra import normalise_maximum
     from matplotlib.patches import Polygon
 
     col_map_f = "CIE 1931 2 Degree Standard Observer"
