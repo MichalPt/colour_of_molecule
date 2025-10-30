@@ -237,47 +237,132 @@ Currently, output formats of four QCh programs are supported: **Gaussian**, **OR
 
 Any settings are now passed to the ``file`` object (an instance of ``File`` class) as attributes: ``file.X`` where ``X`` can be:
 
-o ``.wavelength_range``
- wavelength range to be plotted
+o ``.plot_range``
+ energy range to be plotted (with energy units managed)
 
- e.g.: ``file.wavelength_range = (250,850)``
+ e.g.: 
 
-o ``.standard_deviation``
+ .. code-block:: python
+
+    with com.energy_units("nm"):
+        file.plot_range = (200, 800)  # (default value)
+
+o ``.fwhm``
  sets the width of gaussian peaks used to create absorption spectrum
 
- e.g.: ``file.standard_deviation = 3096.01`` (default value)
+ e.g.: 
+
+ .. code-block:: python
+
+    with com.energy_units("cm-1"):
+        file.fwhm = 1000  # (default value)
+
+o ``.standard_deviation``
+ sets the width of gaussian peaks used to create absorption spectrum (an alternative to specifying fwhm)
 
 o ``.optical_density``
  sets the optical density used to calculate the complementary absorption spectrum needed to determine the actual colour
 
- e.g.: ``file.optical_density = 0.15`` (default value)
+ e.g.: 
+
+ .. code-block:: python
+    
+    file.optical_density = 0.15  # (default value)
 
 o ``.transition_minimal_amplitude``
  sets the minimal transition amplitude which will be included in the plot of absorption lines
 
- e.g.: ``file.transition_minimal_amplitude = 0.5`` (default value)
+ e.g.: 
+ 
+ .. code-block:: python
+    
+    file.transition_minimal_amplitude = 0.5  # (default value)
 
 o ``.normalize_absorption_spectrum``
  determine if the absorption spectrum should be normalized to 1 at maximum value
 
- e.g.: ``file.normalize_absorption_spectrum = False`` (default value)
+ e.g.: 
 
-o ``.normalize_complementary_spectrum``
- determine if the complementary absorption spectrum should be normalized
+ .. code-block:: python
 
- e.g.: ``file.normalize_complementary_spectrum = True`` (default value)
+    file.normalize_absorption_spectrum = False  # (default value)
+
 
 Setting related to plotting:
 
 o ``.plot_title``
  sets custom title to the plots, string needs to be enquoted
 
- e.g.: ``file.plot_title = ""`` (default value)
+ e.g.: 
+
+ .. code-block:: python
+
+    file.plot_title = ""  # (default value)
 
 o ``.legend_title``
  sets custom title to the legend, string needs to be enquoted
 
- e.g.: ``file.legend_title = ""`` (default value)
+ e.g.: 
+
+ .. code-block:: python
+
+    file.legend_title = ""  # (default value)
+
+++++++++++++++++++++++++++++++++++++++++++++++
+energy units management (new in version 0.1.0)
+++++++++++++++++++++++++++++++++++++++++++++++
+
+An exhaustive way of energy units management was introduced in the version 0.1.0. Now, the units of variables related to energy can be specified using a context manager ``com.energy_units()`` (see the example below). The following units are currently supported: 
+
+ o "kcal/mol" (default unit)
+
+ o "kJ/mol"
+
+ o "Hartree"
+
+ o "au" (atomic unit)
+
+ o "eV" (electron volt)
+
+ o "Ry" (Rydberg)
+
+ o "cm-1" (wavenumber in reciprocal centimeters)
+
+ o "Hz"
+
+ o "GHz"
+
+ o "nm" (wavelength in nanometers)
+
+example of use:
+
+.. code-block:: python
+
+   with com.energy_units("cm-1"):
+       file.fwhm = 500
+
+You can also use the class that enables the sensitivity of the variables to the context manager: ``Energy``. You can import it directly from the top level of the package:
+
+.. code-block:: python
+
+   from colour_of_molecule import Energy
+
+When creating a new instance of the class, you can either ...
+
+1. specify the units manually:
+
+.. code-block:: python
+
+   new_var = Energy(125.0, "eV")
+   new_var.in_units("cm-1")  # 1008192.5133654465
+
+2. opt for default units (kcal/mol):
+
+.. code-block:: python
+
+   new_var = Energy(1000)
+   with com.energy_units('cm-1'):
+      print(new_var)   # 349755.01122414693 cm-1
 
 ++++++++++++++++++
 class FontSettings
