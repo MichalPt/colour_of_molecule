@@ -1,6 +1,7 @@
 import re
-from colour_of_molecule.classes import AbsLine, File
+from colour_of_molecule.classes import AbsLine, File, Energy
 from colour_of_molecule.analysis.common_tools import homo_lumo
+from colour_of_molecule.utils.energy_units import get_current_energy_units
 
 
 class File_gaussian(File):
@@ -12,8 +13,9 @@ class File_gaussian(File):
     abs_lines = AbsLines_getter()
 
 
-def Gauss_log_to_abslines(log_file, wav_shift=0.0):
+def Gauss_log_to_abslines(log_file):
     file = open(log_file.path, "r")
+    shift = log_file._shift
 
     list_file = list()
     fs = list()
@@ -96,14 +98,17 @@ def Gauss_log_to_abslines(log_file, wav_shift=0.0):
     for y in list_file:
         loc_wav = reg_wav.search(y)
         loc_f = reg_f.search(y)
-        wav.append(float(y[loc_wav.start() + 1: loc_wav.end() - 3]) + wav_shift)
+        wavelength = Energy(float(y[loc_wav.start() + 1: loc_wav.end() - 3]), 'nm')
+        # energy shift needs to be applied in linear energy units, not wavelength units
+        shifted_wavelength = wavelength + shift
+        wav.append(shifted_wavelength.in_units("nm"))
         fs.append(float(y[loc_f.start() + 2: loc_f.end() - 1]))
 
     if wav is []:
         raise Exception("Error in file import. Check the encoding of .txt file and eventually change it to ANSI.")
 
-    if wav_shift != 0:
-        print("Shift applied to wavelengths:\n  ", wav_shift, " nm")
+    if shift.value != 0:
+        print(f"Shift of {shift.in_current_units()} {get_current_energy_units()} was applied to the energy axis:\n")
 
     output = list(map(lambda i, j, k: AbsLine(i, j, k), wav, fs, all_orbitals))
 

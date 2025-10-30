@@ -58,8 +58,10 @@ class MainReader:
 class EomReader(MainReader):
     reg_eom_final = re.compile("^\s*Final Results for EOM")
 
-    def __call__(self, log_file_path):
-        with open(log_file_path, "r") as file:
+    def __call__(self, log_file):
+        shift = log_file._shift
+
+        with open(log_file.path, "r") as file:
 
             state_transitions = dict()
             index = float()
@@ -170,7 +172,8 @@ class EomReader(MainReader):
         output = list()
 
         for transition in state_transitions.values():
-            output.append(AbsLine(transition.wavelength,
+            energy = Energy(transition.wavelength, "nm") + shift
+            output.append(AbsLine(energy.in_units("nm"),
                                   transition.osc_strength,
                                   [homo_lumo_for_MO(dictlong, id_homo, x) for x in transition.MO_indices]
                                   )
@@ -185,12 +188,12 @@ class MrciReader(MainReader):
     reg_mrci_DMY = re.compile("\|DMY\|")
     reg_mrci_DMZ = re.compile("\|DMZ\|")
 
-    def __call__(self, log_file_path):
-
+    def __call__(self, log_file):
+        shift = log_file._shift
         states = dict()
         state_transitions = dict()
 
-        with open(log_file_path, "r") as file:
+        with open(log_file.path, "r") as file:
             for line in file:
                 if self.reg_mrci_energy.search(line) is not None:
                     nums = [float(x) for x in self.reg_num.findall(line)]
@@ -226,8 +229,9 @@ class MrciReader(MainReader):
         output = list()
 
         for transition in state_transitions.values():
-            output.append(AbsLine(transition.energy.in_units("nm"),
-                                  transition.dipole_trans_moment.get_oscillator_strength(transition.energy.in_units("au")),
+            energy = transition.energy + shift
+            output.append(AbsLine(energy.in_units("nm"),
+                                  transition.dipole_trans_moment.get_oscillator_strength(energy.in_units("au")),
                                   [[wrap_from_both_sides(transition.num_initial), wrap_from_both_sides(transition.num_final)]]
                                   )
                           )
@@ -246,7 +250,7 @@ class File_molpro(File):
         def __get__(self, instance, owner):
             typ, reader = instance.molpro_subtype
             the_reader = reader()
-            data = the_reader(instance.path)
+            data = the_reader(instance)
             return data
 
     class MolproSubtype:

@@ -1,6 +1,7 @@
 import re
 from colour_of_molecule.classes import AbsLine, File, Energy, OpList
 from colour_of_molecule.analysis.common_tools import homo_lumo, remove_dashes, wrap_from_both_sides
+from colour_of_molecule.utils.energy_units import get_current_energy_units
 
 
 class Configuration:
@@ -72,15 +73,16 @@ def create_abs_lines(state1, state2, fosc, wavelength, homo):
 class File_mndo(File):
     class AbsLines_getter:
         def __get__(self, instance, owner):
-            data = Mndo_file_to_abslines(instance.path)
+            data = Mndo_file_to_abslines(instance)
             return data
 
     abs_lines = AbsLines_getter()
 
 
-def Mndo_file_to_abslines(log_file, wav_shift=0.0):
-    with open(log_file, "r") as file:
+def Mndo_file_to_abslines(log_file):
+    shift = log_file._shift
 
+    with open(log_file.path, "r") as file:
         states = dict()
         config = list()
         output = list()
@@ -151,14 +153,16 @@ def Mndo_file_to_abslines(log_file, wav_shift=0.0):
                 if "Symmetry" not in line and reg_num.search(line) is not None:
                     numerics = [float(x) for x in reg_num.findall(line)]
                     homo_id = max([i for i, j in zip(states.get(1).MO_indices, states.get(1).configurations[0].alpha) if len(j) > 0])
-                    abline = create_abs_lines(states.get(init_state), states.get(int(numerics[0])), numerics[5], numerics[4], homo_id)
+                    energy = Energy(numerics[4], "nm") + shift
+                    wavelength = energy.in_units("nm")
+                    abline = create_abs_lines(states.get(init_state), states.get(int(numerics[0])), numerics[5], wavelength, homo_id)
                     output.append(abline)
 
                 elif "Symmetry" not in line:
                     empty_line2 += 1
 
-    if wav_shift != 0:
-        print("Shift applied to wavelengths:\n  ", wav_shift, " nm")
+    if shift.value != 0:
+        print("Shift applied to wavelengths:\n  ", shift, " nm")
 
     return output
 

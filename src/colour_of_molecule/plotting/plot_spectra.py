@@ -1,16 +1,16 @@
-from ..classes.classes import FontSettings
+from ..classes.classes import Energy, FontSettings
 import numpy as np
+from matplotlib import rcParams
+from matplotlib import pyplot as plt
+from colour_of_molecule.classes.classes import File, Energy
+from colour_of_molecule.utils.energy_units import get_current_energy_units
+from colour_of_molecule.analysis.spectrum import find_colour_single
 
 def plot_single_spectrum(file, save="", size=(6,3), dpi=400, rainbow=True,
                          title="", fonts=FontSettings(),
-                         xaxis_label="wavelength [nm]", yaxis_label="relative absorbance",
+                         yaxis_label="relative absorbance",
                          lines_show=True, lines_ratio=(14, 1), lines_colours=True, 
                          lines_width=1.2, lines_lim=0.0001):
-    from matplotlib import rcParams
-    from matplotlib import pyplot as plt
-    from colour_of_molecule.classes.classes import File
-    from colour_of_molecule.analysis.spectrum import find_colour_single
-
     #sanity check:
     if not isinstance(file, File):
         raise Exception("ERROR:\tUnrecognized input. First argument has to be derived from class \"File\".")
@@ -18,9 +18,14 @@ def plot_single_spectrum(file, save="", size=(6,3), dpi=400, rainbow=True,
     if title != "":
         file.plot_title = title
 
-    wavelengths = file.molar_abs_spectrum.wavelengths
+    # from colour-science package:
+    energies = Energy(file.molar_abs_spectrum.wavelengths, get_current_energy_units())
     values = file.molar_abs_spectrum.values
-    wav_range = file.wavelength_range
+
+    xaxis = energies.in_current_units()
+    yaxis = values
+    
+    plot_range = file._plot_range
 
     rcParams['font.size'] = fonts.sizedict['all']
     rcParams['font.family'] = fonts.fontdict['all']
@@ -34,19 +39,21 @@ def plot_single_spectrum(file, save="", size=(6,3), dpi=400, rainbow=True,
     ax0 = ax[0] if boo is True else ax
     ax1 = ax[1] if boo is True else ax
 
+    xaxis_label = "{} [{}]".format("energy", get_current_energy_units())
+
     ax1.set_xlabel(xaxis_label)
-    ax1.set_xlim(*wav_range)
+    ax1.set_xlim(*sorted(plot_range.in_current_units()))
     ax0.set_ylabel(yaxis_label)
-    ax0.set_ylim(0, max(values))
+    ax0.set_ylim(0, max(yaxis))
     ax0.ticklabel_format(axis="y", style="sci", scilimits=(-1, 1))
     ax0.locator_params(axis='y', nbins=5)
 
-    ax0.plot(wavelengths, values, linewidth=1.2, color='k')
+    ax0.plot(xaxis, yaxis, linewidth=1.2, color='k')
 
     if lines_show is True:
         abslines = file.abs_lines
         for absline in abslines:
-            wv = absline.wavelength
+            wv = absline.energy.in_current_units()
             if lines_colours is False:
                 col = 'k'
             else:
@@ -59,7 +66,7 @@ def plot_single_spectrum(file, save="", size=(6,3), dpi=400, rainbow=True,
         plt.setp(ax1.get_yticklines(), visible=False)
 
     if rainbow is True:
-        add_rainbow(ax0, wavelengths, values)
+        add_rainbow(ax0, file)
 
     for label in [*ax1.get_xticklabels(), *ax0.get_yticklabels()]:
         label.set_fontproperties(fonts.fonts['axis_tick_labels'])
@@ -81,7 +88,14 @@ def plot_single_spectrum(file, save="", size=(6,3), dpi=400, rainbow=True,
     plt.show()
 
 
-def add_rainbow(axis, wavelengths, values, opacity=100):
+def add_rainbow(axis, file, opacity=100):
+    energies = Energy(file.molar_abs_spectrum.wavelengths, get_current_energy_units())
+    wavelengths = energies.in_units("nm")
+    values = file.molar_abs_spectrum.values
+
+    xaxis = energies.in_current_units()
+    yaxis = values
+
     # sanity check:
     if not hasattr(axis, 'plot') and not hasattr(axis, 'add_patch'):
         raise Exception("ERROR:\tFirst argument needs to have method \"plot\".")
@@ -95,10 +109,12 @@ def add_rainbow(axis, wavelengths, values, opacity=100):
     col_map_f = "CIE 1931 2 Degree Standard Observer"
 
     cmfs = first_item(filter_cmfs(col_map_f).values())
-    wlen_cmfs = [n for n in wavelengths if n > cmfs.shape.start and n < cmfs.shape.end]
+    cmfs_sele = (wavelengths > cmfs.shape.start) & (wavelengths < cmfs.shape.end)
+    wl_cmfs = wavelengths[cmfs_sele]
+    eng_cmfs = xaxis[cmfs_sele]
 
     clr = XYZ_to_plotting_colourspace(
-        wavelength_to_XYZ(wlen_cmfs, cmfs),
+        wavelength_to_XYZ(wl_cmfs, cmfs),
         CCS_ILLUMINANTS['CIE 1931 2 Degree Standard Observer']['E'],
         apply_cctf_encoding=False)
 
@@ -107,9 +123,9 @@ def add_rainbow(axis, wavelengths, values, opacity=100):
 
     polygon = Polygon(
         np.vstack([
-            [min(wavelengths), 0],
-            np.array([wavelengths, values]).T.tolist(),
-            [max(wavelengths), 0],
+            [xaxis[0], 0],
+            np.array([xaxis, yaxis]).T.tolist(),
+            [xaxis[-1], 0],
         ]),
         facecolor='none',
         edgecolor='none')
@@ -120,11 +136,16 @@ def add_rainbow(axis, wavelengths, values, opacity=100):
     else:
         padding = 0.1
 
-    for dom, col in [(wavelengths - padding, 'black'), (wlen_cmfs, clr)]:
+    widths = np.abs(xaxis[1:] - xaxis[:-1])
+    widths =np.append(widths, widths[-1])
+    widths_cmfs = widths[cmfs_sele]
+
+    #for dom, col in [(wavelengths - padding, 'black'), (wlen_cmfs, clr)]:
+    for dom, col, w in [(xaxis - padding, 'black', widths), (eng_cmfs, clr, widths_cmfs)]:
         axis.bar(
             x=dom,
             height=max(values),
-            width=1 + padding,
+            width=w + padding,
             color=col,
             align='edge',
             alpha=opacity/100,
