@@ -20,7 +20,11 @@ file = com.file_in(path)
 
 
 # Settings:
-file.wavelength_range = (100, 1000)
+with com.energy_units("nm"):
+    file.plot_range = (100, 1000)
+
+with com.energy_units("cm-1"):
+    file.fwhm = 1000
 
 
 # Font settings
@@ -35,8 +39,9 @@ if save_path == "":
 
 
 # Generating output:
-com.plot_single_spectrum(file, save=file_saver(save_path), fonts=fonts)
-com.plot_abs_lines(file, save=file_saver(save_path), fonts=fonts)
+with com.energy_units("cm-1"):
+    com.plot_single_spectrum(file, save=file_saver(save_path), fonts=fonts)
+    com.plot_abs_lines(file, save=file_saver(save_path), fonts=fonts)
 
 
 
