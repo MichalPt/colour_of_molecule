@@ -289,7 +289,7 @@ def plot_abs_lines(file, save="", size=(7,7), dpi=200, fonts=FontSettings(),
 
 
 def get_colour(file, save="", size=(3,3), dpi=200, fonts=FontSettings(), title="RGB: {RGB}"):
-    from colour_of_molecule.analysis.spectrum import find_colour, molar_abs_to_complement_abs
+    from colour_of_molecule.analysis.spectrum import find_colour
     from matplotlib import rcParams
     from matplotlib import pyplot as plt
     from colour_of_molecule.classes.classes import File
@@ -297,9 +297,6 @@ def get_colour(file, save="", size=(3,3), dpi=200, fonts=FontSettings(), title="
     # sanity check:
     if not isinstance(file, File):
         raise Exception("ERROR:\tUnrecognized input. First argument has to be derived from class \"File\".")
-
-    if title != "":
-        file.plot_title = title
 
     RGB = find_colour(file.transmittance)
 

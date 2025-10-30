@@ -81,18 +81,8 @@ def find_colour(spectrum):
     wl_spectrum =colour.SpectralDistribution(data=y_sorted, domain=x_sorted, name=spectrum.name)
     XYZ = colour.sd_to_XYZ(wl_spectrum, cmfs, illuminant)
 
-    # try:
-    #     XYZ = colour.sd_to_XYZ(wl_spectrum, cmfs, illuminant)
-    # except:
-    #     XYZ = colour.sd_to_XYZ(spectrum.interpolate(colour.SpectralShape(min(wavelengths), max(wavelengths), 1)), cmfs, illuminant)
-
-    RGB = colour.XYZ_to_sRGB(XYZ / 100)
-
-    for i in range(0, 3, 1):
-        if RGB[i] < 0:
-            RGB[i] = 0
-        if RGB[i] > 1:
-            RGB[i] = 1
+    rgb = colour.XYZ_to_sRGB(XYZ / 100)
+    RGB = np.clip(rgb, 0, 1)
 
     return RGB
 
