@@ -113,9 +113,10 @@ def add_rainbow(axis, file, opacity=100):
     wl_cmfs = wavelengths[cmfs_sele]
     eng_cmfs = xaxis[cmfs_sele]
 
+    xyz = wavelength_to_XYZ(wl_cmfs, cmfs)
     clr = XYZ_to_plotting_colourspace(
-        wavelength_to_XYZ(wl_cmfs, cmfs),
-        CCS_ILLUMINANTS['CIE 1931 2 Degree Standard Observer']['E'],
+        xyz,
+        CCS_ILLUMINANTS[col_map_f]['E'],
         apply_cctf_encoding=False)
 
     clr = normalise_maximum(clr)
@@ -140,7 +141,6 @@ def add_rainbow(axis, file, opacity=100):
     widths =np.append(widths, widths[-1])
     widths_cmfs = widths[cmfs_sele]
 
-    #for dom, col in [(wavelengths - padding, 'black'), (wlen_cmfs, clr)]:
     for dom, col, w in [(xaxis - padding, 'black', widths), (eng_cmfs, clr, widths_cmfs)]:
         axis.bar(
             x=dom,
