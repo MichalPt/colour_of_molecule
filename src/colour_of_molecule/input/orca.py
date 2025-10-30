@@ -1,19 +1,22 @@
 import re
-from colour_of_molecule.classes import AbsLine, File
+from colour_of_molecule.classes import AbsLine, File, Energy
 from colour_of_molecule.analysis.common_tools import homo_lumo
+from colour_of_molecule.utils.energy_units import get_current_energy_units
 
 
 class File_orca(File):
     class AbsLines_getter:
         def __get__(self, instance, owner):
-            data = Orca_file_to_abslines(instance.path)
+            data = Orca_file_to_abslines(instance)
             return data
 
     abs_lines = AbsLines_getter()
 
 
-def Orca_file_to_abslines(log_file, wav_shift = 0.0):
-    with open(log_file, "r") as file:
+def Orca_file_to_abslines(log_file):
+    shift = log_file._shift
+
+    with open(log_file.path, "r") as file:
 
         fs = list()
         wav = list()
@@ -72,7 +75,9 @@ def Orca_file_to_abslines(log_file, wav_shift = 0.0):
             if edmf is True:
                 if reg_num.search(line) is not None:
                     nums = reg_num.findall(line)
-                    wav.append(float(nums[2]))
+                    energy = Energy(float(nums[2]), "nm") + shift
+                    wavelength = energy.in_units("nm")
+                    wav.append(wavelength)
                     fs.append(float(nums[3]))
                 else:
                     edm = False
@@ -84,8 +89,8 @@ def Orca_file_to_abslines(log_file, wav_shift = 0.0):
     if wav is []:
         raise Exception("Error in file import. Check the encoding of .txt file and eventually change it to ANSI.")
 
-    if wav_shift != 0:
-        print("Shift applied to wavelengths:\n  ", wav_shift, " nm")
+    if shift.value != 0:
+        print("Shift applied to wavelengths:\n  {} {}".format(shift.in_current_units(), get_current_energy_units()))
 
     output = list(map(lambda i, j, k: AbsLine(i, j, k), wav, fs, all_orbitals))
 

@@ -1,96 +1,88 @@
+import numpy as np
+import matplotlib.pyplot as plt
+import colour
+from colour_of_molecule.classes.classes import EnergyRange, Energy, EnergyAxis
+from colour_of_molecule.utils.energy_units import get_current_energy_units
+from colour_of_molecule.plotting.lineshapes import gaussian_profile
 
-def abslines_to_molar_abs(inputf, title="Plot1", show_plot=False, stdev=3099.6, wav_range=(200, 1000), normalize=False):
-    import numpy as np
-    import matplotlib.pyplot as plt
-    import colour
-
-    abslines = inputf
-    wav = list(map(lambda k: k.wavelength, abslines))
+def abslines_to_molar_abs(file, title="Plot1", show_plot=False):
+    abslines = file.abs_lines
+    plot_range = file._plot_range
+    normalize = file.normalize_absorption_spectrum
+    npoints = file.npoints
+    bands = list(map(lambda k: k.energy, abslines))
     fs = list(map(lambda l: l.oscillator_strength, abslines))
 
-    start = wav_range[0]
-    finish = wav_range[1]
-    points = finish - start  # i.e. 1 nm
-
-    # A sqrt(2) * standard deviation of 0.4 eV is 3099.6 nm. 0.1 eV is 12398.4 nm. 0.2 eV is 6199.2 nm, 0.33 eV = 3723.01 nm
-    bands = wav
-    f = fs
-
     # Basic check that we have the same number of bands and oscillator strengths
-    if len(bands) != len(f):
+    if len(bands) != len(fs):
         raise Exception('ERROR:   Number of bands does not match the number of oscillator strengths.')
 
-    def gauss_band(x, band, strength, stdev):
-        bandshape = 1.3062974e8 * (strength / (1e7 / stdev)) * np.exp(
-            -(((1.0 / x) - (1.0 / band)) / (1.0 / stdev)) ** 2)
-        return bandshape
+    x = plot_range.energy_axis
+    converted_x = x.in_current_units()
+    composite = np.zeros_like(x.value)
 
-    x = np.linspace(start, finish, points)
-
-    composite = 0
-    for i in range(0, len(bands), 1):
-        peak = gauss_band(x, float(bands[i]), float(f[i]), stdev)
+    for i, band in enumerate(bands):
+        # lineshape always calculated in linear energy units (kcal/mol - default unit)
+        peak = gaussian_profile(x.value,
+                                float(band.value), 
+                                float(fs[i]), 
+                                file._fwhm.value)
         composite += peak
 
     if show_plot == True:
         figg, axx = plt.subplots()
-        axx.plot(x, composite)
-        plt.xlabel('$\lambda$ / nm')
+        axx.plot(x.value, composite)
+        plt.xlabel('$E$ / {}'.format(get_current_energy_units()))
         plt.ylabel('$\epsilon$ / L mol$^{-1}$ cm$^{-1}$')
         plt.show()
 
     if normalize is True:
         from colour_of_molecule.analysis.common_tools import normalize_list
-        composite = normalize_list(composite)
+        composite = np.array(normalize_list(composite))
 
-    data = colour.SpectralDistribution(data=composite, domain=x, name=title)
+    x_sorted = np.sort(converted_x)
+    y_sorted = composite[np.argsort(converted_x)]
+
+    data = colour.SpectralDistribution(data=y_sorted, domain=x_sorted, name=title)
 
     return data
 
 
-def molar_abs_to_complement_abs(spectrum, OD=0.15, normalize=True):
+def molar_abs_to_transmittance(spectrum, OD=0.15):
     import colour
     import numpy as np
 
     val = spectrum.values
     wav = spectrum.wavelengths
-    tit = spectrum.name
+    title = spectrum.name
     export = list()
-    top = max(spectrum.values)
-
-    norm = OD / top if normalize is True else 1
 
     for j in range(0, len(val), 1):
-        expo = val[j] * norm
-        if expo < 1e-10:
-            expo = 1e-10
-        exval = -np.log10(1 - 10 ** (-expo))
-        export.append(exval)
-    out = colour.SpectralDistribution(data=export, domain=wav, name=tit)
+        A = val[j]
+        T = 10 ** (-A * OD)
+        export.append(T)
+    out = colour.SpectralDistribution(data=export, domain=wav, name=title)
     return out
 
 
-def find_colour(spectrum, col_map_f='CIE 1931 2 Degree Standard Observer'):
-
+def find_colour(spectrum):
     import colour
 
+    col_map_f='CIE 1931 2 Degree Standard Observer'
     cmfs = colour.MSDS_CMFS[col_map_f]
     illuminant = colour.SDS_ILLUMINANTS['D65']
 
-    wavs = spectrum.wavelengths
+    energies = Energy(spectrum.wavelengths)
+    wavelengths = np.array(energies.in_units("nm"), dtype=int)
 
-    try:
-        XYZ = colour.sd_to_XYZ(spectrum, cmfs, illuminant)
-    except:
-        XYZ = colour.sd_to_XYZ(spectrum.interpolate(colour.SpectralShape(min(wavs), max(wavs), 1)), cmfs, illuminant)
+    x_sorted = np.sort(wavelengths)
+    y_sorted = spectrum.values[np.argsort(wavelengths)]
 
-    RGB = colour.XYZ_to_sRGB(XYZ / 100)
+    wl_spectrum =colour.SpectralDistribution(data=y_sorted, domain=x_sorted, name=spectrum.name)
+    XYZ = colour.sd_to_XYZ(wl_spectrum, cmfs, illuminant)
 
-    for i in range(0, 3, 1):
-        if RGB[i] < 0:
-            RGB[i] = 0
-        if RGB[i] > 1:
-            RGB[i] = 1
+    rgb = colour.XYZ_to_sRGB(XYZ / 100)
+    RGB = np.clip(rgb, 0, 1)
 
     return RGB
 

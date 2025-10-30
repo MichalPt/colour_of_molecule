@@ -1,7 +1,9 @@
 from colour_of_molecule.classes import File
+from colour_of_molecule.utils.energy_units import energy_units, get_current_energy_units
 from colour_of_molecule.analysis.common_tools import wrap_from_both_sides
 from colour_of_molecule.plotting.plot_spectra import *
 import sys, os
+
 
 def file_in(path):
     return File(path)
