@@ -19,10 +19,6 @@ else:
 file = com.file_in(path)
 
 
-# Settings:
-file.wavelength_range = (100, 1000)
-
-
 # Font settings
 from colour_of_molecule.classes.classes import FontSettings
 fonts = FontSettings(newfonts={'all': 'Arial'}, newsizes={'title': 11}, use_all=True)
