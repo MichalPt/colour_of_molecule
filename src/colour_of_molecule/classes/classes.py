@@ -38,7 +38,6 @@ class Energy:
 
     supported_units = {  # 1 unit = ... kcal/mol
         "kcal/mol": 1,
-        "kJ/mol": 4.184,
         "Hartree": 630,
         "au": 630,
         "eV": 23.060541945329334,
@@ -210,8 +209,6 @@ class File:
         self._plot_range = EnergyRange(200, 800, "nm")
         self.transition_minimal_amplitude = 0.5
         self.normalize_absorption_spectrum = True
-        self.normalize_complementary_spectrum = True
-        self.npoints = 1000
         self._shift = Energy(0.0)
 
         self.plot_title = ""

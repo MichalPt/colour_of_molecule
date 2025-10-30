@@ -9,7 +9,6 @@ def abslines_to_molar_abs(file, title="Plot1", show_plot=False):
     abslines = file.abs_lines
     plot_range = file._plot_range
     normalize = file.normalize_absorption_spectrum
-    npoints = file.npoints
     bands = list(map(lambda k: k.energy, abslines))
     fs = list(map(lambda l: l.oscillator_strength, abslines))
 
