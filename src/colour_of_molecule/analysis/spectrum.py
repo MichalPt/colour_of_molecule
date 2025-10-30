@@ -48,7 +48,7 @@ def abslines_to_molar_abs(file, title="Plot1", show_plot=False):
     return data
 
 
-def molar_abs_to_complement_abs(spectrum, OD=0.15, normalize=True, threshold = 1e-10):
+def molar_abs_to_transmittance(spectrum, OD=0.15):
     import colour
     import numpy as np
 
@@ -56,22 +56,19 @@ def molar_abs_to_complement_abs(spectrum, OD=0.15, normalize=True, threshold = 1
     wav = spectrum.wavelengths
     title = spectrum.name
     export = list()
-    #norm = OD / max(val)
-    norm = OD / max(val) if normalize is True else 1
 
     for j in range(0, len(val), 1):
-        expo = val[j] * norm
-        if expo < threshold:
-            expo = threshold
-        exval = -np.log10(1 - 10 ** (-expo))
-        export.append(exval)
+        A = val[j]
+        T = 10 ** (-A * OD)
+        export.append(T)
     out = colour.SpectralDistribution(data=export, domain=wav, name=title)
     return out
 
 
-def find_colour(spectrum, col_map_f='CIE 1931 2 Degree Standard Observer'):
+def find_colour(spectrum):
     import colour
 
+    col_map_f='CIE 1931 2 Degree Standard Observer'
     cmfs = colour.MSDS_CMFS[col_map_f]
     illuminant = colour.SDS_ILLUMINANTS['D65']
 

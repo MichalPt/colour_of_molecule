@@ -17,13 +17,12 @@ class MolarAbsSpectrum:
         data = abslines_to_molar_abs(instance)
         return data
 
-
-class ComplementaryAbsSpectrum:
+    
+class Transmittance:
     def __get__(self, instance, owner):
-        from colour_of_molecule.analysis.spectrum import molar_abs_to_complement_abs
+        from colour_of_molecule.analysis.spectrum import molar_abs_to_transmittance
 
-        data = molar_abs_to_complement_abs(instance.molar_abs_spectrum, OD=instance.optical_density,
-                                           normalize=instance.normalize_complementary_spectrum)
+        data = molar_abs_to_transmittance(instance.molar_abs_spectrum, OD=instance.optical_density)
         return data
 
 
@@ -329,7 +328,7 @@ class File:
 
 
     molar_abs_spectrum = MolarAbsSpectrum()
-    complementary_abs_spectrum = ComplementaryAbsSpectrum()
+    transmittance = Transmittance()
     colour_rgb = ColourRGB()
 
 

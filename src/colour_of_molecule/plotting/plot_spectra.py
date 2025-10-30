@@ -288,8 +288,7 @@ def plot_abs_lines(file, save="", size=(7,7), dpi=200, fonts=FontSettings(),
     plt.show()
 
 
-def get_colour(file, save="", size=(3,3), dpi=200, fonts=FontSettings(), title="RGB: {RGB}",
-               col_map_f='CIE 1931 2 Degree Standard Observer'):
+def get_colour(file, save="", size=(3,3), dpi=200, fonts=FontSettings(), title="RGB: {RGB}"):
     from colour_of_molecule.analysis.spectrum import find_colour, molar_abs_to_complement_abs
     from matplotlib import rcParams
     from matplotlib import pyplot as plt
@@ -302,7 +301,7 @@ def get_colour(file, save="", size=(3,3), dpi=200, fonts=FontSettings(), title="
     if title != "":
         file.plot_title = title
 
-    RGB = find_colour(file.complementary_abs_spectrum, col_map_f)
+    RGB = find_colour(file.transmittance)
 
     print("RGB:\t{0}".format(RGB))
 
