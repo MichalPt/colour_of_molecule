@@ -212,21 +212,21 @@ def plot_abs_lines(file, save="", size=(7,7), dpi=200, fonts=FontSettings(),
     if title != "":
         file.plot_title = title
 
-    ab_spectrum = file.molar_abs_spectrum
-    wavelengths = ab_spectrum.wavelengths
-    values = ab_spectrum.values
-    wav_range = file.plot_range
+    energies = Energy(file.molar_abs_spectrum.wavelengths, get_current_energy_units())
+    xaxis = energies.in_current_units()
+    values = file.molar_abs_spectrum.values
+    plot_range = sorted(file._plot_range.in_current_units())
     abs_lines = file.abs_lines
 
     fig2, axis1 = plt.subplots(dpi=dpi, figsize=size, facecolor='w', edgecolor='k')
-    axis1.set_xlim(wav_range)
+    axis1.set_xlim(*plot_range)
     axis2 = axis1.twinx()
-    axis2.set_xlim(wav_range)
+    axis2.set_xlim(*plot_range)
 
     axis1.locator_params(axis='y', nbins=5)
     axis1.ticklabel_format(axis="y", style="sci", scilimits=(-1, 1))
 
-    axis1.plot(wavelengths, values, color='black', alpha=0.3, linewidth=0.6)
+    axis1.plot(xaxis, values, color='black', alpha=0.3, linewidth=0.6)
 
     def check_transition_amplitudes(absl):
         ls = [ab[2] for ab in absl if len(ab) >= 3]
@@ -234,6 +234,7 @@ def plot_abs_lines(file, save="", size=(7,7), dpi=200, fonts=FontSettings(),
         return maximal
 
     for ab in abs_lines:
+        eng = ab.energy.in_current_units()
         text_label = ""
         maximal = check_transition_amplitudes(ab.transitions[0])
         #print("   ABL: ", ab.transitions[0])
@@ -255,8 +256,8 @@ def plot_abs_lines(file, save="", size=(7,7), dpi=200, fonts=FontSettings(),
                 text_label += lab + "\n"
         text_label = text_label[:-1]
 
-        if ab.wavelength > wav_range[0] and ab.wavelength < wav_range[1]:
-            axis2.plot([ab.wavelength, ab.wavelength], [0, ab.oscillator_strength], label=text_label, linewidth=2)
+        if eng > plot_range[0] and eng < plot_range[1]:
+            axis2.plot([eng, eng], [0, ab.oscillator_strength], label=text_label, linewidth=2)
 
     axis1.set_ylabel(yaxis_label)
     axis1.set_xlabel(xaxis_label)
