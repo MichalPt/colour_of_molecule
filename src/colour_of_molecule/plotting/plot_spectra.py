@@ -215,7 +215,7 @@ def plot_abs_lines(file, save="", size=(7,7), dpi=200, fonts=FontSettings(),
     ab_spectrum = file.molar_abs_spectrum
     wavelengths = ab_spectrum.wavelengths
     values = ab_spectrum.values
-    wav_range = file.wavelength_range
+    wav_range = file.plot_range
     abs_lines = file.abs_lines
 
     fig2, axis1 = plt.subplots(dpi=dpi, figsize=size, facecolor='w', edgecolor='k')

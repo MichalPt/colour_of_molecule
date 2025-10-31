@@ -518,11 +518,16 @@ Example 1
 .. code-block:: python
 
  file = com.file_in("C:/Users/xyz/carotenoid.out")
- file.wavelength_range = (100, 1000)
- com.plot_single_spectrum(file, save="C:/Users/xyz/exp1.png", dpi=200, size=(10, 3),
-                         title="Carotenoid", xaxis_label="wavelength [nm]", yaxis_label="relative absorbance",
-                         lines_show=False,
-                        )
+ 
+ with com.energy_units("cm-1"):
+     file.fwhm = 750
+
+ with com.energy_units("nm"):
+     file.plot_range = (100, 900)
+     com.plot_single_spectrum(file, save="C:/Users/xyz/exp1.png", dpi=200, size=(10, 3),
+                             title="Carotenoid", xaxis_label="wavelength [nm]", yaxis_label="relative absorbance",
+                             lines_show=False,
+                            )
 
 .. image:: https://github.com/MichalPt/colour_of_molecule/blob/6855ea3d8a149b7eb3b4c72048ecf5a42d50af85/exp1_0.png
 
@@ -534,11 +539,15 @@ Example 2
 .. code-block:: python
  
  file = com.file_in("C:/Users/xyz/phenolphtalein.log")
- file.wavelength_range = (200, 700)
- com.plot_single_spectrum(file, save="C:/Users/xyz/exp2.png", dpi=200, size=(10, 3),
-                         title=None, xaxis_label="wavelength [nanometers]", yaxis_label="rel. abs.", 
-                         lines_show=True, lines_colours=True, lines_lim=0.001, lines_ratio=(12,2), lines_width=1.8,
-                        )
+ 
+ with com.energy_units("cm-1"):
+     file.plot_range = (10000, 30000)
+     file.standard_deviation = 1000
+
+     com.plot_single_spectrum(file, save="C:/Users/xyz/exp2.png", dpi=200, size=(10, 3),
+                             title=None, xaxis_label="wavenumber [cm-1]", yaxis_label="rel. abs.", 
+                             lines_show=True, lines_colours=True, lines_lim=0.001, lines_ratio=(12,2), lines_width=1.8,
+                             )
 
 .. image:: https://github.com/MichalPt/colour_of_molecule/blob/6855ea3d8a149b7eb3b4c72048ecf5a42d50af85/exp1.png
 
