@@ -102,14 +102,16 @@ class Energy:
 
 class EnergyAxis:
     def __get__(self, instance, owner):
+        # generation of energy axis has to be in nm units for the sake of correct
+        # spacing when evaluating color using the color-science package
         start = int(instance.start.in_units("nm"))
         end = int(instance.end.in_units("nm"))
-        npoints = end - start + 1
-        return Energy(np.linspace(start, end, npoints), units="nm")
+        npoints = abs(end - start) + 1
+        return Energy(np.linspace(*sorted((start, end)), npoints), units="nm")
 
 
 class EnergyRange(Energy):
-    def __init__(self, start, end, units=Energy._Energy__default_unit):
+    def __init__(self, start, end, units=get_current_energy_units()):
         if isinstance(start, Energy) and isinstance(end, Energy):
             start = start.value
             end = end.value

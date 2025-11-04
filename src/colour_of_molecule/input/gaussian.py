@@ -27,13 +27,13 @@ def Gauss_log_to_abslines(log_file):
     all_orbitals = list()
 
     reg_exc = re.compile("Excited State")
-    reg_wav = re.compile("\s[\d.]*\snm")
-    reg_f = re.compile("f\=[\d.]*\s")
-    reg_par = re.compile("^(\s?#)p\s")
-    reg_line = re.compile("^(\s?-)-*")
-    reg_charge = re.compile("^\s?Charge.*\sMultiplicity")
-    reg_MOs = re.compile("\d+\s[(alpha)(beta)]+\selectrons")
-    reg_num = re.compile("[\d.]+")
+    reg_wav = re.compile(r"\s[\d.]*\snm")
+    reg_f = re.compile(r"f\=[\d.]*\s")
+    reg_par = re.compile(r"^(\s?#)p\s")
+    reg_line = re.compile(r"^(\s?-)-*")
+    reg_charge = re.compile(r"^\s?Charge.*\sMultiplicity")
+    reg_MOs = re.compile(r"\d+\s[(alpha)(beta)]+\selectrons")
+    reg_num = re.compile(r"[\d.]+")
 
     ki = False
     ori = False

@@ -194,7 +194,7 @@ def create_label(list1, list2):
 
 def plot_abs_lines(file, save="", size=(7,7), dpi=200, fonts=FontSettings(),
                    title="",
-                   xaxis_label="wavelength [nm]", yaxis_label="$\epsilon$", yaxis_label_right="oscillator strength"):
+                   xaxis_label="", yaxis_label=r"$\epsilon$", yaxis_label_right="oscillator strength"):
     from colour_of_molecule.classes.classes import File
     from matplotlib import pyplot as plt
     from matplotlib import rcParams
@@ -258,6 +258,9 @@ def plot_abs_lines(file, save="", size=(7,7), dpi=200, fonts=FontSettings(),
 
         if eng > plot_range[0] and eng < plot_range[1]:
             axis2.plot([eng, eng], [0, ab.oscillator_strength], label=text_label, linewidth=2)
+
+    if xaxis_label == "":
+        xaxis_label = "{} [{}]".format("energy", get_current_energy_units())
 
     axis1.set_ylabel(yaxis_label)
     axis1.set_xlabel(xaxis_label)

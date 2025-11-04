@@ -29,13 +29,14 @@ def Orca_file_to_abslines(log_file):
         all_orbitals = list()
         num_of_el = list()
 
-        reg_state = re.compile("^STATE\s*\d+\:")
-        reg_line = re.compile("^-+")
+        reg_state = re.compile(r"^STATE\s*\d+\:")
+        reg_line = re.compile(r"^-+")
         # reg_charge = re.compile("^\s?Charge.*\sMultiplicity")
 
-        reg_MOs = re.compile("^N(\(Alpha\)|\(Beta\))\s*\:")
-        reg_num = re.compile("[\d.]+")
-
+        reg_MOs = re.compile(r"^N(\(Alpha\)|\(Beta\))\s*\:")
+        reg_num = re.compile(r"[\d.]+")
+        reg_num_float = re.compile(r"[\d\.]{3,}")
+        
         edm = False
         edmf = False
         li = 0
@@ -74,7 +75,8 @@ def Orca_file_to_abslines(log_file):
 
             if edmf is True:
                 if reg_num.search(line) is not None:
-                    nums = reg_num.findall(line)
+                    # nums = reg_num.findall(line)
+                    nums = reg_num_float.findall(line)
                     energy = Energy(float(nums[2]), "nm") + shift
                     wavelength = energy.in_units("nm")
                     wav.append(wavelength)

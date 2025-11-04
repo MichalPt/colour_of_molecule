@@ -87,10 +87,10 @@ def Mndo_file_to_abslines(log_file):
         config = list()
         output = list()
 
-        reg_state = re.compile("^\s?State\s*\d+,")
-        reg_line = re.compile("^\s?-+")
-        reg_num = re.compile("[\d.]+")
-        reg_ab = re.compile("ab|[ab-]{1}")
+        reg_state = re.compile(r"^\s?State\s*\d+,")
+        reg_line = re.compile(r"^\s?-+")
+        reg_num = re.compile(r"[\d.]+")
+        reg_ab = re.compile(r"ab|[ab-]{1}")
 
         def filter_ab(lst, ab):
             out = [x.replace("-", "").replace(ab, "") for x in lst]

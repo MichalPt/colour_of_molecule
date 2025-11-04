@@ -48,11 +48,11 @@ class StateTransition:
 
 
 class MainReader:
-    reg_num = re.compile("-?\d+[.\d]*")
-    reg_alphabet = re.compile("[a-zA-Z]+")
-    reg_res_for_states = re.compile("^\s*Results for state\s*\d+\.\d+")
-    reg_oscillator = re.compile("^\s*Oscillator strength")
-    reg_orbitals = re.compile("^\sELECTRON ORBITALS")
+    reg_num = re.compile(r"-?\d+[.\d]*")
+    reg_alphabet = re.compile(r"[a-zA-Z]+")
+    reg_res_for_states = re.compile(r"^\s*Results for state\s*\d+\.\d+")
+    reg_oscillator = re.compile(r"^\s*Oscillator strength")
+    reg_orbitals = re.compile(r"^\sELECTRON ORBITALS")
 
 
 class EomReader(MainReader):
