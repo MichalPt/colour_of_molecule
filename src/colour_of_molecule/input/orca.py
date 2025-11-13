@@ -71,7 +71,7 @@ def Orca_file_to_abslines(log_file):
             if edm is True:
                 if li == 1:
                     parantheses = np.array(reg_parantheses.findall(line))
-                    if parantheses.size > 0:
+                    if parantheses.size > 2:
                         nm_index = np.argwhere(parantheses == 'nm').item()
                 if li == 2:
                     edmf = True
