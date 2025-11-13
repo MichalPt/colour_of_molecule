@@ -1,4 +1,5 @@
 import re
+import numpy as np
 from colour_of_molecule.classes import AbsLine, File, Energy
 from colour_of_molecule.analysis.common_tools import homo_lumo
 from colour_of_molecule.utils.energy_units import get_current_energy_units
@@ -31,6 +32,7 @@ def Orca_file_to_abslines(log_file):
 
         reg_state = re.compile(r"^STATE\s*\d+\:")
         reg_line = re.compile(r"^-+")
+        reg_parantheses = re.compile(r"\((.*?)\)")
         # reg_charge = re.compile("^\s?Charge.*\sMultiplicity")
 
         reg_MOs = re.compile(r"^N(\(Alpha\)|\(Beta\))\s*\:")
@@ -67,6 +69,10 @@ def Orca_file_to_abslines(log_file):
                 states.append(state_no)
 
             if edm is True:
+                if li == 1:
+                    parantheses = np.array(reg_parantheses.findall(line))
+                    if parantheses.size > 0:
+                        nm_index = np.argwhere(parantheses == 'nm').item()
                 if li == 2:
                     edmf = True
                     edm = False
@@ -75,9 +81,9 @@ def Orca_file_to_abslines(log_file):
 
             if edmf is True:
                 if reg_num.search(line) is not None:
-                    # nums = reg_num.findall(line)
                     nums = reg_num_float.findall(line)
-                    energy = Energy(float(nums[2]), "nm") + shift
+                    val = float(nums[nm_index])
+                    energy = Energy(val, "nm") + shift
                     wavelength = energy.in_units("nm")
                     wav.append(wavelength)
                     fs.append(float(nums[3]))
